@@ -16,9 +16,23 @@ export const Checkout: React.FC<CheckoutProps> = ({
   onProceedToPayment
 }) => {
   const [error, setError] = useState('');
+  const [firstName, setFirstName] = useState(() => {
+    if (user.firstName) return user.firstName;
+    const parts = (user.username || '').split(' ');
+    return parts[0] || '';
+  });
+  const [lastName, setLastName] = useState(() => {
+    if (user.lastName) return user.lastName;
+    const parts = (user.username || '').split(' ');
+    return parts.length > 1 ? parts.slice(1).join(' ') : '';
+  });
 
   const handlePlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Please provide both first and last names.');
+      return;
+    }
     setError('');
     onProceedToPayment();
   };
@@ -45,8 +59,8 @@ export const Checkout: React.FC<CheckoutProps> = ({
           
           {/* Checkout billing inputs form */}
           <div className="md:col-span-7 bg-zinc-950 border border-zinc-900 rounded-2xl p-6 space-y-6">
-            <h3 className="text-white text-sm font-bold uppercase tracking-wider border-b border-zinc-900 pb-2 text-left">
-              Confirm Card Holder Details
+            <h3 className="text-[#adff2f] text-sm sm:text-base font-bold font-sans tracking-wide border-b border-zinc-800 pb-2 text-left">
+              Confirm Your Names
             </h3>
 
             {error && (
@@ -55,21 +69,34 @@ export const Checkout: React.FC<CheckoutProps> = ({
               </div>
             )}
 
-            <form onSubmit={handlePlaceOrder} className="space-y-4">
+            <form onSubmit={handlePlaceOrder} className="space-y-6">
               
-              {/* Account Holder Display (Read-Only) */}
-              <div className="space-y-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl">
-                <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400 text-left">
-                  Account Holder
-                </label>
-                <div className="text-lg font-bold font-mono text-[#adff2f] uppercase">
-                  {card.accountHolder}
+              {/* Names Input */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-white font-sans">
+                    First name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full bg-white text-black p-2.5 rounded text-sm font-sans outline-none focus:ring-2 focus:ring-[#adff2f]"
+                  />
                 </div>
-              </div>
-
-              {/* Notice text */}
-              <div className="p-3 bg-[#122812]/10 border border-[#adff2f]/5 rounded-xl text-left text-[11px] text-zinc-500 font-sans leading-relaxed">
-                Your card is registered under the account holder name above. This name has been permanently set by the admin and cannot be changed.
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-white font-sans">
+                    Last name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full bg-white text-black p-2.5 rounded text-sm font-sans outline-none focus:ring-2 focus:ring-[#adff2f]"
+                  />
+                </div>
               </div>
 
               {/* Submit action */}

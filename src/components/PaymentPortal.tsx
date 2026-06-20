@@ -568,52 +568,18 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
                 <span className="text-[10px] font-mono uppercase text-[#adff2f] font-bold">Secure Escrow Node Target: Dynamic Verified Merchant</span>
                 <p className="text-[11px] text-zinc-400">Please process the mobile money payment of <strong className="text-white">${card.price.toFixed(2)} USD</strong> directly on eversend portal.</p>
               </div>
-              <a
-                href={currentEversendLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-black bg-[#adff2f] hover:bg-[#bbf04d] font-bold py-2 px-4 rounded-xl text-xs uppercase tracking-wider font-sans transition-all shrink-0 flex items-center gap-1.5 shadow-md shadow-[#adff2f]/10"
-              >
-                <span>Launch Direct Portal</span>
-                <Send className="w-3.5 h-3.5" />
-              </a>
             </div>
 
             {/* The Integrated Payment IFrame */}
             <div className="flex-1 bg-white relative overflow-hidden" id="iframe-viewport-container">
-              
-              {/* Twitter Branded Protection Mask Header */}
-              <div className="absolute inset-x-0 top-0 h-16 bg-zinc-950 border-b border-zinc-900 z-30 flex items-center justify-between px-4">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold text-sm shadow-md animate-bounce">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" className="w-4.5 h-4.5 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
-                  </div>
-                  <div className="text-left font-sans">
-                    <div className="text-xs font-extrabold text-white flex items-center gap-1">
-                      <span>Twitter Verified Merchant Protocol</span>
-                      <span className="inline-flex items-center justify-center bg-sky-500 text-white rounded-full w-3 h-3 text-[7px] font-black">✓</span>
-                    </div>
-                    <p className="text-[9px] text-zinc-400">Enterprise Escrow masking is active & protective</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1.5 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-full">
-                  <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-ping" />
-                  <span className="text-[9px] text-sky-400 font-mono font-bold uppercase tracking-wider">MASKING ACTIVE</span>
-                </div>
-              </div>
-
-              {/* Masking container for shifting up the page header under the Twitter bar */}
-              <div className="w-full h-full relative" style={{ paddingTop: '64px' }}>
-                <div className="w-full h-full overflow-hidden relative">
-                  <iframe
-                    src={currentEversendLink}
-                    title="Eversend Payment Portal Link"
-                    className="w-full h-full border-none absolute inset-0 -mt-[45px]"
-                    style={{ height: 'calc(100% + 45px)' }}
-                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
+              <div className="w-full h-full relative">
+                <iframe
+                  src={currentEversendLink}
+                  title="Eversend Payment Portal Link"
+                  className="w-full h-full border-none absolute inset-0"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                  referrerPolicy="no-referrer"
+                />
               </div>
             </div>
 

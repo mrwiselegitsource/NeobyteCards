@@ -80,7 +80,18 @@ export default function App() {
   });
 
   // Tab & Routing State
-  const [activeTab, setActiveTab] = useState<'shop' | 'admin' | 'login'>('login');
+  const [activeTab, setActiveTab] = useState<'shop' | 'admin' | 'login'>(() => {
+    const saved = localStorage.getItem('neobyte_user_auth');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.isLoggedIn) {
+          return 'shop';
+        }
+      } catch (e) {}
+    }
+    return 'login';
+  });
   const [viewState, setViewState] = useState<'catalog' | 'detail' | 'checkout' | 'payment_portal'>('catalog');
   const [selectedCard, setSelectedCard] = useState<PrepaidCard | null>(null);
 
