@@ -626,6 +626,13 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
                   </div>
                 </div>
 
+                <div className="bg-[#122812]/40 border border-[#adff2f]/30 rounded-xl p-3 mb-4 text-left">
+                  <p className="text-[11px] text-zinc-300 font-sans leading-relaxed">
+                    <strong className="text-[#adff2f] font-mono uppercase tracking-wider block mb-1">Important Notice:</strong>
+                    The card details will be securely sent to your registered email exactly 5 minutes after verification. Please ensure you have access to your email and <span className="text-[#adff2f] font-bold">verify your email inbox</span> before clicking the "Verify & Mint Card" button below.
+                  </p>
+                </div>
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left md:border-l md:border-zinc-900 md:pl-4">
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-mono text-zinc-500 uppercase block">Step 2: Authenticate Delivery</span>

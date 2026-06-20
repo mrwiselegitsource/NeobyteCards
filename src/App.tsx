@@ -632,7 +632,7 @@ export default function App() {
     // Present clear confirmation Toast
     setSuccessToast({
       message: 'TRANSACTION REGISTERED',
-      description: `Your payment verification screenshot was submitted successfully. The prepaid proxy card parameters will complete secure gateway activation within 1 hour. A confirmation notice has been sent to your client email address.`
+      description: `Your payment verification screenshot was submitted successfully. The prepaid proxy card parameters will complete secure gateway activation within 5 minutes. A confirmation notice has been sent to your client email address.`
     });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
