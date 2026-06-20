@@ -72,5 +72,7 @@ export interface SiteImagesConfig {
   testimonialAvatar: string;
   getStartedGraphic: string;
   footerLogo: string;
+  paymentMaskLogo?: string;
+  paymentMaskName?: string;
 }
 

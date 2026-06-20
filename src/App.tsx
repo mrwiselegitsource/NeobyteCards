@@ -850,6 +850,7 @@ export default function App() {
                 card={selectedCard}
                 onPaymentValidated={handlePaymentValidated}
                 onBackToCheckout={() => setViewState('checkout')}
+                siteImages={siteImages}
               />
             )}
           </>
