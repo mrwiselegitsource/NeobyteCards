@@ -620,6 +620,7 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
+                    alert("Please note: After your payment has been verified, your card details will be delivered to your email within 5 minutes.");
                     setEversendStatus('submitting');
                     setTimeout(() => {
                       setEversendStatus('done');
