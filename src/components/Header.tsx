@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Key, Cpu, Menu, X, User as UserIcon, LogOut } from 'lucide-react';
+import { Shield, Key, Cpu, MoreVertical, X, User as UserIcon, LogOut } from 'lucide-react';
 import { User, SiteImagesConfig } from '../types';
 
 interface HeaderProps {
@@ -68,15 +68,33 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => setActiveTab('shop')}
             id="nav-shop-btn"
-            className={`font-sans text-xs uppercase font-extrabold tracking-wider transition-all duration-300 py-1.5 px-3 rounded-lg cursor-pointer ${
+            className={`font-sans text-[13px] font-bold tracking-wide transition-colors duration-300 cursor-pointer ${
               activeTab === 'shop'
-                ? 'text-[#adff2f] bg-[#122c12]/40 border border-[#adff2f]/20 shadow-[0_0_12px_rgba(173,255,47,0.1)]'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-805'
+                ? 'text-[#adff2f]'
+                : 'text-[#adff2f] hover:text-[#bbf04d]'
             }`}
           >
-            Prepaid Portal
+            Cards
           </button>
           
+          <button
+            onClick={() => {
+              const element = document.getElementById('how-it-works-section');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                setActiveTab('shop');
+                setTimeout(() => {
+                  document.getElementById('how-it-works-section')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
+            }}
+            id="nav-how-it-works-btn"
+            className="text-[#adff2f] hover:text-[#bbf04d] font-sans text-[13px] font-bold tracking-wide transition-colors duration-300 cursor-pointer animate-none"
+          >
+            How It Works
+          </button>
+
           <button
             onClick={() => {
               const element = document.getElementById('customer-support-portal');
@@ -90,19 +108,19 @@ export const Header: React.FC<HeaderProps> = ({
               }
             }}
             id="nav-support-btn"
-            className="text-zinc-400 hover:text-white hover:bg-zinc-805 font-sans text-xs uppercase font-extrabold tracking-wider transition-all duration-300 py-1.5 px-3 rounded-lg cursor-pointer animate-none"
+            className="text-[#adff2f] hover:text-[#bbf04d] font-sans text-[13px] font-bold tracking-wide transition-colors duration-300 cursor-pointer animate-none"
           >
-            Terminal Support
+            Contact Us
           </button>
           
           {isAdmin && (
             <button
               onClick={() => setActiveTab('admin')}
               id="nav-admin-btn"
-              className={`font-sans text-xs uppercase font-extrabold tracking-wider transition-all duration-300 py-1.5 px-3 rounded-lg cursor-pointer ${
+              className={`font-sans text-[13px] font-bold tracking-wide transition-colors duration-300 cursor-pointer ${
                 activeTab === 'admin'
-                  ? 'text-[#adff2f] bg-[#122c12]/40 border border-[#adff2f]/20 shadow-[0_0_12px_rgba(173,255,47,0.1)]'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-805'
+                  ? 'text-[#adff2f]'
+                  : 'text-[#adff2f] hover:text-[#bbf04d]'
               }`}
             >
               <span className="flex items-center gap-1.5">
@@ -111,29 +129,21 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
           )}
+
+          {/* User Logout Button directly in nav for desktop */}
+          {user.isLoggedIn && (
+            <button
+              onClick={onLogout}
+              className="ml-4 bg-[#c0ea5b] hover:bg-[#c9f561] text-black font-sans text-[13px] font-bold px-6 py-2 rounded transition-colors duration-300 shadow-md cursor-pointer"
+            >
+              Logout
+            </button>
+          )}
         </nav>
 
         {/* User Actions & Authenticator Access */}
         <div className="hidden md:flex items-center space-x-4">
-          {user.isLoggedIn ? (
-            <div className="flex items-center space-x-3 bg-zinc-900/60 p-1.5 pr-3 rounded-full border border-zinc-800">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#122812] to-[#adff2f]/30 flex items-center justify-center border border-[#adff2f]/20 text-[#adff2f]">
-                <UserIcon className="w-3.5 h-3.5" />
-              </div>
-              <div className="text-left">
-                <p className="text-[10px] font-mono font-medium text-white max-w-[120px] truncate">{user.username}</p>
-                <p className="text-[8px] text-[#adff2f] font-mono tracking-wider font-bold">CLIENT NODE</p>
-              </div>
-              <button
-                onClick={onLogout}
-                id="header-logout-btn"
-                title="Sign Out"
-                className="text-zinc-400 hover:text-red-400 transition-colors pl-2 border-l border-zinc-805 ml-1.5 cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
+          {!user.isLoggedIn && (
             <button
               onClick={() => setActiveTab('login')}
               id="header-login-btn"
@@ -149,13 +159,13 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Hamburger Menu button */}
+        {/* Mobile Menu Trigger (Three dots) */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           id="mobile-menu-trigger"
           className="md:hidden p-2 text-zinc-400 hover:text-white focus:outline-none cursor-pointer"
         >
-          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <MoreVertical className="w-6 h-6" />}
         </button>
 
       </div>
@@ -169,15 +179,34 @@ export const Header: React.FC<HeaderProps> = ({
               setMobileMenuOpen(false);
             }}
             id="mobile-nav-shop"
-            className={`w-full text-left py-2 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all ${
+            className={`w-full text-left py-2 px-3 rounded-lg text-[13px] font-bold tracking-wide transition-all ${
               activeTab === 'shop'
                 ? 'text-[#adff2f] bg-[#122c12]/40 border-l-4 border-l-[#adff2f]'
-                : 'text-zinc-355'
+                : 'text-zinc-300'
             }`}
           >
-            Prepaid Portal
+            Cards
           </button>
           
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              const element = document.getElementById('how-it-works-section');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                setActiveTab('shop');
+                setTimeout(() => {
+                  document.getElementById('how-it-works-section')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
+            }}
+            id="mobile-nav-how-it-works"
+            className="w-full text-left py-2 px-3 rounded-lg text-[13px] font-bold tracking-wide text-zinc-300 transition-all cursor-pointer"
+          >
+            How It Works
+          </button>
+
           <button
             onClick={() => {
               setMobileMenuOpen(false);
@@ -192,9 +221,9 @@ export const Header: React.FC<HeaderProps> = ({
               }
             }}
             id="mobile-nav-support"
-            className="w-full text-left py-2 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide text-zinc-355 transition-all cursor-pointer"
+            className="w-full text-left py-2 px-3 rounded-lg text-[13px] font-bold tracking-wide text-zinc-300 transition-all cursor-pointer"
           >
-            Terminal Support
+            Contact Us
           </button>
           
           {isAdmin && (

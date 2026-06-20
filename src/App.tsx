@@ -791,6 +791,18 @@ export default function App() {
                   }} 
                 />
                 
+                {/* Danger Notice Display */}
+                <div className="bg-[#0a0a0a] py-16 px-4 border-y border-[#adff2f]/10">
+                  <div className="max-w-4xl mx-auto text-center space-y-6">
+                    <h2 className="text-[#FF5722] text-3xl md:text-4xl lg:text-5xl font-sans font-extrabold uppercase tracking-tight leading-tight">
+                      DANGER! THE NEOBYTE VIRTUAL CREDIT CARD IS<br className="hidden md:block" /> HIGHLY ENGAGING
+                    </h2>
+                    <p className="text-zinc-300 text-base md:text-lg font-sans max-w-3xl mx-auto leading-relaxed tracking-wide">
+                      Users find themselves exploring endless opportunities — streaming, shopping, and subscribing — all powered by seamless, encrypted transactions.
+                    </p>
+                  </div>
+                </div>
+
                 <CardListing
                   cards={cards}
                   onSelectCard={handleSelectCard}
