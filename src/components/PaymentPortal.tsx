@@ -546,7 +546,7 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
       {/* Embedded High-Fidelity Interactive Eversend Modal/Gateway Iframe */}
       {isMMModalOpen && (
         <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md" id="eversend-gateway-container">
-          <div className="relative w-full max-w-2xl bg-[#090F09] border border-[#adff2f]/30 rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(173,255,47,0.15)] flex flex-col text-[#EDEDED] font-sans h-[90vh]">
+          <div className="relative w-full max-w-[440px] bg-[#090F09] border border-[#adff2f]/30 rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(173,255,47,0.15)] flex flex-col text-[#EDEDED] font-sans h-[90vh]">
             
             {/* Header block status */}
             <div className="bg-zinc-950 p-4 flex items-center justify-between border-b border-zinc-900">
@@ -562,14 +562,6 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Abort Transfer</span>
               </button>
-            </div>
-
-            {/* Quick Helper Banner */}
-            <div className="bg-[#122c12]/30 border-b border-[#adff2f]/15 p-3.5 px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-mono uppercase text-[#adff2f] font-bold">Secure Escrow Node Target: Dynamic Verified Merchant</span>
-                <p className="text-[11px] text-zinc-400">Please process the mobile money payment of <strong className="text-white">${card.price.toFixed(2)} USD</strong> directly on eversend portal.</p>
-              </div>
             </div>
 
             {/* The Integrated Payment IFrame with Custom Mask */}
@@ -608,89 +600,50 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
             </div>
 
             {/* Verification panel at the bottom */}
-            <div className="bg-zinc-950 p-6 border-t border-zinc-900 space-y-4">
-              
-              {/* Screenshot Proof Block inside Modal */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                <div className="space-y-1 text-left">
-                  <label className="block text-[9px] font-mono uppercase tracking-wider text-[#adff2f] font-bold">Screenshot proof of payment</label>
-                  <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-xl p-3 text-center transition-all relative ${
-                      isDragging 
-                        ? 'border-[#adff2f] bg-[#122c12]/20' 
-                        : uploadedFile 
-                        ? 'border-emerald-500 bg-[#0d2212]/10' 
-                        : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      id="mm-receipt-upload"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    />
-                    {uploadedFile ? (
-                      <div className="flex items-center gap-2.5 justify-center">
-                        <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
-                        <span className="text-[10px] text-white font-mono truncate max-w-[120px]">Screenshot Ready</span>
-                        <div className="relative w-7 h-7 border border-zinc-800 rounded overflow-hidden shrink-0 bg-black">
-                          <img src={uploadedFile} alt="Receipt preview" className="w-full h-full object-cover" />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 justify-center py-1">
-                        <Upload className="w-4 h-4 text-zinc-500" />
-                        <span>Drag screenshot or browse</span>
-                      </div>
-                    )}
+            <div className="bg-zinc-950 p-3 border-t border-zinc-900 flex flex-col justify-center">
+              <div className="flex items-center gap-3 w-full">
+                <div className="flex-1 relative h-[42px]">
+                  <input
+                    type="file"
+                    id="mm-receipt-upload"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`w-full h-full flex items-center justify-center gap-2 rounded-xl border text-[10px] font-mono transition-all ${
+                    uploadedFile ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                  }`}>
+                    {uploadedFile ? <><CheckCircle className="w-3.5 h-3.5"/> Proof Attached</> : <><Upload className="w-3.5 h-3.5"/> Upload Proof</>}
                   </div>
                 </div>
-
-                <div className="bg-[#122812]/40 border border-[#adff2f]/30 rounded-xl p-3 mb-4 text-left">
-                  <p className="text-[11px] text-zinc-300 font-sans leading-relaxed">
-                    <strong className="text-[#adff2f] font-mono uppercase tracking-wider block mb-1">Important Notice:</strong>
-                    The card details will be securely sent to your registered email exactly 5 minutes after verification. Please ensure you have access to your email and <span className="text-[#adff2f] font-bold">verify your email inbox</span> before clicking the "Verify & Mint Card" button below.
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left md:border-l md:border-zinc-900 md:pl-4">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-mono text-zinc-500 uppercase block">Step 2: Authenticate Delivery</span>
-                    <span className="text-[11px] text-zinc-300 font-sans">Trigger automatic secure card mint.</span>
-                  </div>
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEversendStatus('submitting');
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEversendStatus('submitting');
+                    setTimeout(() => {
+                      setEversendStatus('done');
                       setTimeout(() => {
-                        setEversendStatus('done');
-                        setTimeout(() => {
-                          setIsMMModalOpen(false);
-                          onPaymentValidated(`Eversend Mobile Money payment verification completed successfully via secure ledger.`, uploadedFile);
-                          setEversendStatus('form');
-                        }, 1800);
-                      }, 1500);
-                    }}
-                    id="verify-eversend-btn"
-                    className="bg-[#adff2f] hover:bg-[#bbf04d] text-black font-extrabold text-xs tracking-widest uppercase py-3 px-6 rounded-xl transition-all shadow-md shadow-[#adff2f]/5 cursor-pointer shrink-0"
-                  >
-                    {eversendStatus === 'submitting' ? (
-                      <span className="flex items-center gap-2">
-                        <span className="border-2 border-black border-t-transparent rounded-full w-3.5 h-3.5 animate-spin" />
-                        <span>Verifying Blockchain...</span>
-                      </span>
-                    ) : eversendStatus === 'done' ? (
-                      <span>CAPTURED & REGISTERED</span>
-                    ) : (
-                      <span>Verify & Mint Card</span>
-                    )}
-                  </button>
-                </div>
+                        setIsMMModalOpen(false);
+                        onPaymentValidated(`Eversend Mobile Money payment verification completed successfully via secure ledger.`, uploadedFile);
+                        setEversendStatus('form');
+                      }, 1800);
+                    }, 1500);
+                  }}
+                  id="verify-eversend-btn"
+                  className="flex-1 bg-[#adff2f] hover:bg-[#bbf04d] text-black font-extrabold text-[10px] tracking-widest uppercase h-[42px] rounded-xl transition-all shadow-md shadow-[#adff2f]/5 cursor-pointer text-center flex items-center justify-center"
+                >
+                  {eversendStatus === 'submitting' ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="border-2 border-black border-t-transparent rounded-full w-3 h-3 animate-spin" />
+                      <span>Verifying...</span>
+                    </span>
+                  ) : eversendStatus === 'done' ? (
+                    <span>Done</span>
+                  ) : (
+                    <span>Verify & Mint</span>
+                  )}
+                </button>
               </div>
             </div>
 
