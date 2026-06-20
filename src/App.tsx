@@ -151,7 +151,7 @@ export default function App() {
     if (siteImages) {
       const ogImage = document.getElementById('og-image');
       if (ogImage) {
-        ogImage.setAttribute('content', siteImages.seoPreviewImage || siteImages.headerLogo || '');
+        ogImage.setAttribute('content', siteImages.seoPreviewImage || siteImages.headerLogo || 'https://neobytebankcards.vercel.app/logo.png');
       }
     }
   }, [siteImages]);
