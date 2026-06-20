@@ -74,5 +74,6 @@ export interface SiteImagesConfig {
   footerLogo: string;
   paymentMaskLogo?: string;
   paymentMaskName?: string;
+  seoPreviewImage?: string;
 }
 

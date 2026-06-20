@@ -146,6 +146,16 @@ export default function App() {
     fetchSiteImages();
   }, []);
 
+  // Update SEO image when siteImages change
+  useEffect(() => {
+    if (siteImages) {
+      const ogImage = document.getElementById('og-image');
+      if (ogImage) {
+        ogImage.setAttribute('content', siteImages.seoPreviewImage || siteImages.headerLogo || '');
+      }
+    }
+  }, [siteImages]);
+
   const handleUpdateSupportContacts = async (newContacts: SupportContacts) => {
     try {
       const supportRef = doc(db, 'settings', 'support');

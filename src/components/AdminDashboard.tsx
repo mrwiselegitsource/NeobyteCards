@@ -73,6 +73,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminFooterLogo, setAdminFooterLogo] = useState(siteImages?.footerLogo || '');
   const [adminPaymentMaskLogo, setAdminPaymentMaskLogo] = useState(siteImages?.paymentMaskLogo || '');
   const [adminPaymentMaskName, setAdminPaymentMaskName] = useState(siteImages?.paymentMaskName || '');
+  const [adminSeoPreviewImage, setAdminSeoPreviewImage] = useState(siteImages?.seoPreviewImage || '');
 
   React.useEffect(() => {
     if (siteImages) {
@@ -86,6 +87,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setAdminFooterLogo(siteImages.footerLogo || '');
       setAdminPaymentMaskLogo(siteImages.paymentMaskLogo || '');
       setAdminPaymentMaskName(siteImages.paymentMaskName || '');
+      setAdminSeoPreviewImage(siteImages.seoPreviewImage || '');
     }
   }, [siteImages]);
 
@@ -2034,6 +2036,18 @@ NeoByte Bank Service Dispatch`;
                   />
                 </div>
 
+                {/* SEO Preview Image */}
+                <div className="space-y-1.5 text-left">
+                  <label className="block text-[10px] font-mono text-zinc-400 uppercase tracking-wider text-left">11. Link Preview Image (WhatsApp, Twitter, etc)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. https://domain.com/social_preview.png"
+                    value={adminSeoPreviewImage}
+                    onChange={(e) => setAdminSeoPreviewImage(e.target.value)}
+                    className="w-full text-xs bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-white outline-none focus:border-[#adff2f]/30 font-mono"
+                  />
+                </div>
+
                 </div>
 
                 {/* Preview Panel */}
@@ -2130,6 +2144,16 @@ NeoByte Bank Service Dispatch`;
                       </div>
                     )}
 
+                    {/* SEO Preview Image */}
+                    {adminSeoPreviewImage && (
+                      <div className="space-y-1">
+                        <p className="text-[8px] text-zinc-400 font-mono">11. Link Preview Image</p>
+                        <div className="w-full h-24 bg-black rounded border border-zinc-800 overflow-hidden flex items-center justify-center p-2">
+                          <img src={adminSeoPreviewImage} alt="SEO Preview Logo" className="max-w-full max-h-full object-contain" referrerPolicy="no-referrer" />
+                        </div>
+                      </div>
+                    )}
+
                     {!adminHeaderLogo && !adminHeroBackground && !adminHeroCardsStack && !adminLightningGraphic && !adminMarketplaceImage && !adminTestimonialAvatar && !adminGetStartedGraphic && !adminFooterLogo && (
                       <p className="text-[9px] text-zinc-500 italic">Add image URLs above to preview</p>
                     )}
@@ -2156,6 +2180,7 @@ NeoByte Bank Service Dispatch`;
                     footerLogo: adminFooterLogo,
                     paymentMaskLogo: adminPaymentMaskLogo,
                     paymentMaskName: adminPaymentMaskName,
+                    seoPreviewImage: adminSeoPreviewImage,
                   }, null, 2)}
                   className="w-full h-24 text-[11px] bg-zinc-950 border border-zinc-900 p-2 rounded-xl text-zinc-400 outline-none font-mono focus:ring-0 cursor-default select-all"
                 />
@@ -2179,6 +2204,7 @@ NeoByte Bank Service Dispatch`;
                           footerLogo: adminFooterLogo.trim(),
                           paymentMaskLogo: adminPaymentMaskLogo.trim(),
                           paymentMaskName: adminPaymentMaskName.trim(),
+                          seoPreviewImage: adminSeoPreviewImage.trim(),
                         });
                         setAlertMessage({ type: 'success', text: 'PNG Placeholders & corporate layout assets successfully updated in Firestore!' });
                         window.scrollTo({ top: 0, behavior: 'smooth' });
