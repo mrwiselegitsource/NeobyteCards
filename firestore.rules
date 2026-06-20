@@ -1,0 +1,176 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global utility validators
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailMatch(email) {
+      return isSignedIn()
+        && request.auth.token != null
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == email.lower();
+    }
+
+    function isAuthAdmin() {
+      return isEmailMatch('mrwiselegitsource@proton.me')
+        || isEmailMatch('mrwiselegitsource@gmail.com')
+        || isEmailMatch('bankadmin@admin.com');
+    }
+
+    function isWebAdmin() {
+      return isEmailMatch('mrwiselegitsource@proton.me')
+        || isEmailMatch('mrwiselegitsource@gmail.com')
+        || isEmailMatch('bankadmin@admin.com');
+    }
+
+    function isValidId(id) {
+       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_.-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isNum(val) {
+      return val is number || val is int;
+    }
+
+    function isValOptStr(data, key, maxSize) {
+      return !(key in data) || data[key] == null || (data[key] is string && data[key].size() <= maxSize);
+    }
+
+    // Strict validation blueprint for a PrepaidCard payload
+    function isValidCard(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.brand is string && (data.brand == 'Mastercard' || data.brand == 'Visa' || data.brand == 'Amex' || data.brand == 'Discover' || data.brand == 'Atmos')
+        && data.name is string && data.name.size() <= 128
+        && isNum(data.price) && data.price > 0
+        && isNum(data.limit) && data.limit >= 100
+        && data.cardNumber is string && data.cardNumber.size() <= 64
+        && data.expiry is string && data.expiry.size() <= 16
+        && data.cvv is string && data.cvv.size() <= 16
+        && data.accountHolder is string && data.accountHolder.size() <= 128
+        && data.address is string && data.address.size() <= 256
+        && data.country is string && data.country.size() <= 128
+        && isValOptStr(data, 'imageURL', 1048576);
+    }
+
+    // Strict validation for UserAccount document
+    function isValidUserAccount(data) {
+      return data.email is string && data.email.size() <= 128
+        && data.username is string && data.username.size() <= 64
+        && isValOptStr(data, 'firstName', 128)
+        && isValOptStr(data, 'lastName', 128);
+    }
+
+    // Strict validation for PurchasedCard document
+    function isValidPurchasedCard(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.brand is string && (data.brand == 'Mastercard' || data.brand == 'Visa' || data.brand == 'Amex' || data.brand == 'Discover' || data.brand == 'Atmos')
+        && data.name is string && data.name.size() <= 128
+        && isNum(data.price) && data.price >= 0
+        && isNum(data.limit) && data.limit >= 0
+        && data.cardNumber is string && data.cardNumber.size() <= 64
+        && data.expiry is string && data.expiry.size() <= 16
+        && data.cvv is string && data.cvv.size() <= 16
+        && data.accountHolder is string && data.accountHolder.size() <= 128
+        && data.purchaseDate is string && data.purchaseDate.size() <= 32
+        && data.isFrozen is bool
+        && data.ownerId is string && data.ownerId.size() <= 128
+        && isValOptStr(data, 'notes', 1024);
+    }
+
+    // Strict validation for VisitorCounter payload
+    function isValidVisitorCounter(data) {
+      return isNum(data.count);
+    }
+
+    // Strict validation for SupportContacts payload
+    function isValidSupportContacts(data) {
+      return data.email is string && data.email.size() <= 128
+        && data.phone is string && data.phone.size() <= 64
+        && isValOptStr(data, 'operatingHours', 128);
+    }
+
+    // Strict validation for SiteImages payload
+    function isValidSiteImages(data) {
+      return isValOptStr(data, 'headerLogo', 1048576)
+        && isValOptStr(data, 'heroBackground', 1048576)
+        && isValOptStr(data, 'heroCardsStack', 1048576)
+        && isValOptStr(data, 'lightningGraphic', 1048576)
+        && isValOptStr(data, 'marketplaceImage', 1048576)
+        && isValOptStr(data, 'testimonialAvatar', 1048576)
+        && isValOptStr(data, 'getStartedGraphic', 1048576)
+        && isValOptStr(data, 'footerLogo', 1048576);
+    }
+
+    // Strict validation for SupportTicket payload
+    function isValidTicket(data) {
+      return data.name is string && data.name.size() <= 128
+        && data.email is string && data.email.size() <= 128
+        && data.message is string && data.message.size() <= 4096
+        && data.createdAt is string && data.createdAt.size() <= 32
+        && data.status is string && (data.status == 'open' || data.status == 'closed' || data.status == 'resolved');
+    }
+
+    // Cards item collection rules
+    match /cards/{cardId} {
+      allow read: if true;
+      allow create, update: if isAuthAdmin() && isValidId(cardId) && isValidCard(incoming());
+      allow delete: if isAuthAdmin() && isValidId(cardId);
+    }
+
+    // Analytics (visitor counters) rules
+    match /analytics/{analyticsId} {
+      allow read: if true;
+      allow create: if analyticsId == 'visitors' && isValidVisitorCounter(incoming());
+      allow update: if analyticsId == 'visitors' && isValidVisitorCounter(incoming());
+      allow delete: if false;
+    }
+
+    // User profile mapping data rules
+    match /users/{userId} {
+      allow read: if isSignedIn() && userId == request.auth.uid;
+      allow create, update: if isValidId(userId) && isSignedIn() && userId == request.auth.uid && isValidUserAccount(incoming());
+      allow delete: if false;
+    }
+
+    // Purchased cards durable collection rules
+    match /purchasedCards/{purchaseId} {
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidId(purchaseId) && isSignedIn() && incoming().ownerId == request.auth.uid && isValidPurchasedCard(incoming());
+      allow update: if isValidId(purchaseId) && isSignedIn() && existing().ownerId == request.auth.uid && incoming().ownerId == request.auth.uid && isValidPurchasedCard(incoming());
+      allow delete: if isValidId(purchaseId) && isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    // Support/Config settings rules
+    match /settings/{settingsId} {
+      allow read: if true;
+      allow create, update: if (isAuthAdmin() || isWebAdmin()) && isValidId(settingsId)
+        && (
+          (settingsId == 'support' && isValidSupportContacts(incoming()))
+          || (settingsId == 'siteImages' && isValidSiteImages(incoming()))
+        );
+      allow delete: if isAuthAdmin() || isWebAdmin();
+    }
+
+    // Support tickets rules
+    match /support_tickets/{ticketId} {
+      allow create: if isValidId(ticketId) && isValidTicket(incoming());
+      allow read, update, delete: if isAuthAdmin() || isWebAdmin();
+    }
+
+    // Global Safety Net catch-all - MUST be at the end to allow specific rules above
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

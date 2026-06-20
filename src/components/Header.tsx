@@ -1,0 +1,261 @@
+import React from 'react';
+import { Shield, Key, Cpu, Menu, X, User as UserIcon, LogOut } from 'lucide-react';
+import { User, SiteImagesConfig } from '../types';
+
+interface HeaderProps {
+  user: User;
+  onLogout: () => void;
+  activeTab: 'shop' | 'admin' | 'login';
+  setActiveTab: (tab: 'shop' | 'admin' | 'login') => void;
+  siteImages?: SiteImagesConfig;
+}
+
+export const Header: React.FC<HeaderProps> = ({
+  user,
+  onLogout,
+  activeTab,
+  setActiveTab,
+  siteImages
+}) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+  // Admin section validation supports both registered email portals
+  const isAdmin = user && user.isLoggedIn && user.email && (
+    user.email.toLowerCase().trim() === 'mrwiselegitsource@proton.me' ||
+    user.email.toLowerCase().trim() === 'mrwiselegitsource@gmail.com' ||
+    user.email.toLowerCase().trim() === 'bankadmin@admin.com'
+  );
+
+  return (
+    <header className="sticky top-0 z-50 bg-[#040904]/90 backdrop-blur-md border-b border-[#adff2f]/10 shadow-lg px-4 py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        
+        {/* Brand Logo & Slogan */}
+        <div 
+          className="flex items-center space-x-3 cursor-pointer group animate-none"
+          onClick={() => setActiveTab('shop')}
+          id="brand-logo-trigger"
+        >
+          {siteImages?.headerLogo ? (
+            <img 
+              src={siteImages.headerLogo} 
+              alt="NeoByte Bank Logo" 
+              className="h-10 object-contain" 
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <>
+              <div className="relative p-2 bg-[#122812] border border-[#adff2f]/30 rounded-xl overflow-hidden shadow-inner group-hover:border-[#adff2f] transition-all">
+                <Cpu className="w-5 h-5 text-[#adff2f] animate-pulse" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-transparent to-[#adff2f]/20 blur-sm group-hover:block hidden" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-1">
+                  <span className="font-sans font-bold text-base text-white tracking-widest uppercase">
+                    NEOBYTE <span className="text-[#adff2f]">BANK</span>
+                  </span>
+                </div>
+                <p className="text-[8px] font-mono tracking-wider text-zinc-400 group-hover:text-lime-300 transition-colors">
+                  NEO SECURITY. REAL CREDIT.
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Desktop Navigation Links */}
+        <nav className="hidden md:flex items-center space-x-6" id="desktop-nav">
+          <button
+            onClick={() => setActiveTab('shop')}
+            id="nav-shop-btn"
+            className={`font-sans text-xs uppercase font-extrabold tracking-wider transition-all duration-300 py-1.5 px-3 rounded-lg cursor-pointer ${
+              activeTab === 'shop'
+                ? 'text-[#adff2f] bg-[#122c12]/40 border border-[#adff2f]/20 shadow-[0_0_12px_rgba(173,255,47,0.1)]'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-805'
+            }`}
+          >
+            Prepaid Portal
+          </button>
+          
+          <button
+            onClick={() => {
+              const element = document.getElementById('customer-support-portal');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                setActiveTab('shop');
+                setTimeout(() => {
+                  document.getElementById('customer-support-portal')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
+            }}
+            id="nav-support-btn"
+            className="text-zinc-400 hover:text-white hover:bg-zinc-805 font-sans text-xs uppercase font-extrabold tracking-wider transition-all duration-300 py-1.5 px-3 rounded-lg cursor-pointer animate-none"
+          >
+            Terminal Support
+          </button>
+          
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              id="nav-admin-btn"
+              className={`font-sans text-xs uppercase font-extrabold tracking-wider transition-all duration-300 py-1.5 px-3 rounded-lg cursor-pointer ${
+                activeTab === 'admin'
+                  ? 'text-[#adff2f] bg-[#122c12]/40 border border-[#adff2f]/20 shadow-[0_0_12px_rgba(173,255,47,0.1)]'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-805'
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5" />
+                Admin Panel
+              </span>
+            </button>
+          )}
+        </nav>
+
+        {/* User Actions & Authenticator Access */}
+        <div className="hidden md:flex items-center space-x-4">
+          {user.isLoggedIn ? (
+            <div className="flex items-center space-x-3 bg-zinc-900/60 p-1.5 pr-3 rounded-full border border-zinc-800">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#122812] to-[#adff2f]/30 flex items-center justify-center border border-[#adff2f]/20 text-[#adff2f]">
+                <UserIcon className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] font-mono font-medium text-white max-w-[120px] truncate">{user.username}</p>
+                <p className="text-[8px] text-[#adff2f] font-mono tracking-wider font-bold">CLIENT NODE</p>
+              </div>
+              <button
+                onClick={onLogout}
+                id="header-logout-btn"
+                title="Sign Out"
+                className="text-zinc-400 hover:text-red-400 transition-colors pl-2 border-l border-zinc-805 ml-1.5 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setActiveTab('login')}
+              id="header-login-btn"
+              className={`flex items-center space-x-1.5 font-sans text-xs font-black tracking-wider uppercase px-4 py-2 rounded-xl transition-all duration-300 shadow-md cursor-pointer ${
+                activeTab === 'login'
+                  ? 'text-white bg-zinc-900 border border-zinc-750'
+                  : 'bg-[#adff2f] hover:bg-[#bbf04d] text-black shadow-[#adff2f]/5'
+              }`}
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Connect Client</span>
+            </button>
+          )}
+        </div>
+
+        {/* Hamburger Menu button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          id="mobile-menu-trigger"
+          className="md:hidden p-2 text-zinc-400 hover:text-white focus:outline-none cursor-pointer"
+        >
+          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+      </div>
+
+      {/* Mobile Drawer Navigation */}
+      {mobileMenuOpen && (
+        <div className="md:hidden mt-3 pt-3 border-t border-[#adff2f]/10 flex flex-col space-y-3 bg-[#040904] px-2 pb-4 rounded-xl transition-all animate-in fade-in animate-none" id="mobile-nav">
+          <button
+            onClick={() => {
+              setActiveTab('shop');
+              setMobileMenuOpen(false);
+            }}
+            id="mobile-nav-shop"
+            className={`w-full text-left py-2 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all ${
+              activeTab === 'shop'
+                ? 'text-[#adff2f] bg-[#122c12]/40 border-l-4 border-l-[#adff2f]'
+                : 'text-zinc-355'
+            }`}
+          >
+            Prepaid Portal
+          </button>
+          
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              const element = document.getElementById('customer-support-portal');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                setActiveTab('shop');
+                setTimeout(() => {
+                  document.getElementById('customer-support-portal')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
+            }}
+            id="mobile-nav-support"
+            className="w-full text-left py-2 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide text-zinc-355 transition-all cursor-pointer"
+          >
+            Terminal Support
+          </button>
+          
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setActiveTab('admin');
+                setMobileMenuOpen(false);
+              }}
+              id="mobile-nav-admin"
+              className={`w-full text-left py-2 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide flex items-center justify-between transition-all ${
+                activeTab === 'admin'
+                  ? 'text-[#adff2f] bg-[#122c12]/40 border-l-4 border-l-[#adff2f]'
+                  : 'text-zinc-355'
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5" />
+                Admin Panel
+              </span>
+            </button>
+          )}
+
+          <hr className="border-zinc-850 my-1" />
+
+          {user.isLoggedIn ? (
+            <div className="flex items-center justify-between bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-800">
+              <div className="flex items-center space-x-3">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#122812] to-[#adff2f]/30 flex items-center justify-center border border-[#adff2f]/20 text-[#adff2f]">
+                  <UserIcon className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono font-medium text-white">{user.username}</p>
+                  <p className="text-[8px] text-[#adff2f] font-mono uppercase tracking-wider font-bold">Client Connected</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  onLogout();
+                  setMobileMenuOpen(false);
+                }}
+                id="mobile-nav-logout"
+                className="text-zinc-400 hover:text-red-400 transition-colors p-2 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setActiveTab('login');
+                setMobileMenuOpen(false);
+              }}
+              id="mobile-nav-login"
+              className="w-full flex items-center justify-center space-x-1.5 bg-[#adff2f] text-black font-sans font-black uppercase text-xs px-4 py-2.5 rounded-lg shadow-md cursor-pointer"
+            >
+              <Key className="w-4 h-4" />
+              <span>Connect Client</span>
+            </button>
+          )}
+        </div>
+      )}
+    </header>
+  );
+};

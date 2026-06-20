@@ -1,0 +1,8 @@
+{
+  "name": "Remix: NeoByte Bank",
+  "description": "Secure global prepaid cards portal with instant purchase, modern Luhn verification, card customization, and multiple safe checkouts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
