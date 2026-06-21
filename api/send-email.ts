@@ -137,7 +137,7 @@ function buildPurchaseEmail(to: string, data: EmailPayload['data']) {
           <tr style="border-bottom:none"><td class="lbl" style="border-bottom:none">Purchase Date</td><td class="val" style="border-bottom:none">${data.purchaseDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</td></tr>
         </table>
         <hr>
-        <p style="font-size:12px;color:${MUTED}">Estimated activation time: <span style="color:${TEXT}">within 1 hour</span> of payment confirmation. Your full card credentials will be emailed upon activation.</p>
+        <p style="font-size:12px;color:${MUTED}">Estimated activation time: <span style="color:${TEXT}">within 5 minutes</span> of payment confirmation. Your full card credentials will be emailed upon activation.</p>
       </div>
     `),
   };
