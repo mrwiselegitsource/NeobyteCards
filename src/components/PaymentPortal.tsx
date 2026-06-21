@@ -18,6 +18,7 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
   const [activeMethod, setActiveMethod] = useState<'mobile' | 'bitcoin' | 'neomail'>('mobile');
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [isMMModalOpen, setIsMMModalOpen] = useState(false);
+  const [showVerificationAlert, setShowVerificationAlert] = useState(false);
 
   // Mobile money states
   const [mmCountry, setMmCountry] = useState('United States (USD)');
@@ -620,16 +621,7 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    alert("Please note: After your payment has been verified, your card details will be delivered to your email within 5 minutes.");
-                    setEversendStatus('submitting');
-                    setTimeout(() => {
-                      setEversendStatus('done');
-                      setTimeout(() => {
-                        setIsMMModalOpen(false);
-                        onPaymentValidated(`Eversend Mobile Money payment verification completed successfully via secure ledger.`, uploadedFile);
-                        setEversendStatus('form');
-                      }, 1800);
-                    }, 1500);
+                    setShowVerificationAlert(true);
                   }}
                   id="verify-eversend-btn"
                   className="flex-1 bg-[#adff2f] hover:bg-[#bbf04d] text-black font-extrabold text-[10px] tracking-widest uppercase h-[42px] rounded-xl transition-all shadow-md shadow-[#adff2f]/5 cursor-pointer text-center flex items-center justify-center"
@@ -652,6 +644,39 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
         </div>
       )}
 
+      {/* Custom Verification Alert Modal */}
+      {showVerificationAlert && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#121212] border border-[#adff2f]/30 rounded-2xl max-w-sm w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-300">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 bg-[#adff2f]/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-[#adff2f]" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-white text-center mb-2">Delivery Notice</h3>
+            <p className="text-zinc-300 text-center text-sm mb-6 leading-relaxed">
+              Please note: After your payment has been verified, your card details will be delivered to your email <span className="text-[#adff2f] font-bold">within 5 minutes</span>.
+            </p>
+            <button
+              onClick={() => {
+                setShowVerificationAlert(false);
+                setEversendStatus('submitting');
+                setTimeout(() => {
+                  setEversendStatus('done');
+                  setTimeout(() => {
+                    setIsMMModalOpen(false);
+                    onPaymentValidated(`Eversend Mobile Money payment verification completed successfully via secure ledger.`, uploadedFile);
+                    setEversendStatus('form');
+                  }, 1800);
+                }, 1500);
+              }}
+              className="w-full bg-[#adff2f] hover:bg-[#bbf04d] text-black font-bold py-3 rounded-xl transition-all"
+            >
+              I Understand
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -280,10 +280,10 @@ export default function App() {
         allPurchasedCards.map(async (card) => {
           if (card.status === 'awaiting_dispatch') {
             const timestamp = card.purchaseTimestamp || 0;
-            const oneHour = 60 * 60 * 1000;
+            const fiveMinutes = 5 * 60 * 1000;
             const elapsed = Date.now() - timestamp;
             
-            if (timestamp > 0 && elapsed >= oneHour) {
+            if (timestamp > 0 && elapsed >= fiveMinutes) {
               changed = true;
               
               const activeCard = {
