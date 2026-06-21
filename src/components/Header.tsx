@@ -36,31 +36,12 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => setActiveTab('shop')}
           id="brand-logo-trigger"
         >
-          {siteImages?.headerLogo ? (
-            <img 
-              src={siteImages.headerLogo} 
-              alt="NeoByte Bank Logo" 
-              className="h-10 object-contain" 
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <>
-              <div className="relative p-2 bg-[#122812] border border-[#adff2f]/30 rounded-xl overflow-hidden shadow-inner group-hover:border-[#adff2f] transition-all">
-                <Cpu className="w-5 h-5 text-[#adff2f] animate-pulse" />
-                <div className="absolute -inset-1 bg-gradient-to-r from-transparent to-[#adff2f]/20 blur-sm group-hover:block hidden" />
-              </div>
-              <div>
-                <div className="flex items-center space-x-1">
-                  <span className="font-sans font-bold text-base text-white tracking-widest uppercase">
-                    NEOBYTE <span className="text-[#adff2f]">BANK</span>
-                  </span>
-                </div>
-                <p className="text-[8px] font-mono tracking-wider text-zinc-400 group-hover:text-lime-300 transition-colors">
-                  NEO SECURITY. REAL CREDIT.
-                </p>
-              </div>
-            </>
-          )}
+          <img 
+            src={siteImages?.headerLogo || "/logo.png"} 
+            alt="NeoByte Bank Logo" 
+            className="h-10 object-contain" 
+            referrerPolicy="no-referrer"
+          />
         </div>
 
         {/* Desktop Navigation Links */}

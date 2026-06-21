@@ -16,19 +16,12 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyTerms, visitorCount
           
           {/* Brand & Mission Statement */}
           <div className="col-span-1 md:col-span-6 space-y-4">
-            {siteImages?.footerLogo ? (
-              <img 
-                src={siteImages.footerLogo} 
-                alt="Footer Corporate Logo" 
-                className="h-10 object-contain block mb-4" 
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="flex items-center space-x-2 text-white">
-                <Shield className="w-5 h-5 text-[#adff2f]" />
-                <span className="font-sans font-bold tracking-widest text-[#adff2f] text-sm">NEOBYTE BANK PROTECT</span>
-              </div>
-            )}
+            <img 
+              src={siteImages?.footerLogo || "/logo.png"} 
+              alt="Footer Corporate Logo" 
+              className="h-10 object-contain block mb-4" 
+              referrerPolicy="no-referrer"
+            />
             
             <p className="text-xs leading-relaxed text-zinc-400 max-w-xl">
               NeoByte Bank of NeoByte Technologies Ltd., delivering secure, next-generation credit and payment services. We combine encrypted, real-time transaction processing with adaptive cyber-defense to protect your accounts and data. Committed to transparency, compliance, and innovative fintech solutions.
