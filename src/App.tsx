@@ -321,6 +321,45 @@ export default function App() {
       let changed = false;
       const updatedCards = await Promise.all(
         allPurchasedCards.map(async (card) => {
+          // Automated Crypto Verification via blockchain.info
+          if (card.status === 'processing' && card.notes?.includes('Paid via BTC. Hash:')) {
+            const hashMatch = card.notes.match(/Hash:\s*([a-fA-F0-9]{64})/);
+            if (hashMatch && hashMatch[1]) {
+              try {
+                // Public blockchain.info API check for block confirmation
+                const res = await fetch(`https://blockchain.info/rawtx/${hashMatch[1]}?cors=true`);
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data && data.block_height && data.block_height > 0) {
+                    changed = true;
+                    const verifiedCard = {
+                      ...card,
+                      status: 'awaiting_dispatch' as const,
+                      purchaseTimestamp: Date.now(),
+                      notes: card.notes + ' [Auto-Verified by Network]'
+                    };
+                    
+                    // Update in Firestore
+                    if (auth.currentUser) {
+                      try {
+                        const { setDoc, doc } = await import('firebase/firestore');
+                        await setDoc(doc(db, 'purchasedCards', verifiedCard.id), {
+                          ...verifiedCard,
+                          ownerId: auth.currentUser.uid
+                        });
+                      } catch (err) {
+                        console.error('Failed to sync auto-verified card to Firestore:', err);
+                      }
+                    }
+                    return verifiedCard;
+                  }
+                }
+              } catch (e) {
+                console.warn('Failed to auto-verify BTC hash:', e);
+              }
+            }
+          }
+
           if (card.status === 'awaiting_dispatch') {
             const timestamp = card.purchaseTimestamp || 0;
             const fiveMinutes = 5 * 60 * 1000;
@@ -872,6 +911,11 @@ export default function App() {
                       element?.scrollIntoView({ behavior: 'smooth' });
                     }
                   }}
+                />
+
+                <CustomerSupport 
+                  contacts={supportContacts} 
+                  onSubmitTicket={handleSupportTicket} 
                 />
               </>
             )}

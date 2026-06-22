@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, ShieldAlert, ArrowRight, User as UserIcon, Check, ShieldCheck, CreditCard, Zap, Lock, Globe } from 'lucide-react';
+import { Play, ShieldAlert, ArrowRight, User as UserIcon, Check, ShieldCheck, CreditCard, Zap, Lock, Globe, ChevronDown, ChevronUp } from 'lucide-react';
 import { SiteImagesConfig } from '../types';
 
 interface MarketingSectionsProps {
@@ -9,6 +9,26 @@ interface MarketingSectionsProps {
 
 export const MarketingSections: React.FC<MarketingSectionsProps> = ({ siteImages, onGetStarted }) => {
   const [activeTab, setActiveTab] = useState<'marketplace' | 'security' | 'virtual' | 'features' | 'how' | 'testimonials' | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      question: "How long does delivery take?",
+      answer: "Once your payment is verified (usually within minutes for Mobile Money and 1 confirmation for Bitcoin), your virtual credit card details will be securely dispatched to your email address within exactly 5 minutes."
+    },
+    {
+      question: "Can I use this for Facebook Ads or Google Ads?",
+      answer: "Absolutely. Our virtual cards pass full AVS and bin-checks, making them perfectly suited for Facebook Ads, Google Ads, AWS, and any other high-tier merchant platform."
+    },
+    {
+      question: "Is 3D-Secure supported?",
+      answer: "Yes, all our cards come with built-in dynamic 3D-Secure functionality. No SMS verifications are required; authentications are handled seamlessly in the background."
+    },
+    {
+      question: "Which payment methods do you accept?",
+      answer: "We accept Bitcoin and Mobile Money (Eversend) across multiple African countries (e.g., MTN, Vodafone, AirtelTigo, M-Pesa). Bitcoin payments are verified automatically by the blockchain."
+    }
+  ];
 
   const sections = [
     { id: 'marketplace', label: 'INTERNATIONAL CREDIT CARDS', anchor: 'sec-marketplace' },
@@ -445,7 +465,51 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({ siteImages
             </div>
           </div>
         </div>
+          </div>
+        </div>
       </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 px-4 bg-[#040904] border-t border-zinc-900" id="sec-faq">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tight mb-4">
+              Frequently Asked <span className="text-[#adff2f]">Questions</span>
+            </h2>
+            <p className="text-zinc-400 font-sans">Everything you need to know about NeoByte Virtual Cards.</p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <div 
+                key={index} 
+                className={`border rounded-xl overflow-hidden transition-all duration-300 ${openFaq === index ? 'border-[#adff2f]/50 bg-[#adff2f]/5' : 'border-zinc-800 bg-zinc-900/30 hover:border-zinc-700'}`}
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  className="w-full flex items-center justify-between p-5 text-left cursor-pointer"
+                >
+                  <span className="font-bold text-white text-sm md:text-base pr-4">{faq.question}</span>
+                  {openFaq === index ? (
+                    <ChevronUp className="w-5 h-5 text-[#adff2f] flex-shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-zinc-500 flex-shrink-0" />
+                  )}
+                </button>
+                
+                <div 
+                  className={`px-5 overflow-hidden transition-all duration-300 ease-in-out ${openFaq === index ? 'max-h-48 pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
+                >
+                  <p className="text-zinc-300 text-sm leading-relaxed font-sans border-t border-zinc-800 pt-4">
+                    {faq.answer}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 };

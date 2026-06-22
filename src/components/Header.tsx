@@ -93,6 +93,24 @@ export const Header: React.FC<HeaderProps> = ({
           >
             Contact Us
           </button>
+
+          <button
+            onClick={() => {
+              const element = document.getElementById('site-footer');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                setActiveTab('shop');
+                setTimeout(() => {
+                  document.getElementById('site-footer')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
+            }}
+            id="nav-policies-btn"
+            className="text-[#adff2f] hover:text-[#bbf04d] font-sans text-[13px] font-bold tracking-wide transition-colors duration-300 cursor-pointer animate-none"
+          >
+            Policies
+          </button>
           
           {isAdmin && (
             <button
@@ -201,10 +219,29 @@ export const Header: React.FC<HeaderProps> = ({
                 }, 100);
               }
             }}
-            id="mobile-nav-support"
+            id="mobile-nav-contact"
             className="w-full text-left py-2 px-3 rounded-lg text-[13px] font-bold tracking-wide text-zinc-300 transition-all cursor-pointer"
           >
             Contact Us
+          </button>
+
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              const element = document.getElementById('site-footer');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                setActiveTab('shop');
+                setTimeout(() => {
+                  document.getElementById('site-footer')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
+            }}
+            id="mobile-nav-policies"
+            className="w-full text-left py-2 px-3 rounded-lg text-[13px] font-bold tracking-wide text-zinc-300 transition-all cursor-pointer"
+          >
+            Policies
           </button>
           
           {isAdmin && (
