@@ -131,12 +131,25 @@ export default function App() {
   }, [viewState]);
 
   useEffect(() => {
+  useEffect(() => {
     if (selectedCard) {
       localStorage.setItem('neobyte_selected_card', JSON.stringify(selectedCard));
     } else {
       localStorage.removeItem('neobyte_selected_card');
     }
   }, [selectedCard]);
+
+  const [pendingCheckouts, setPendingCheckouts] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('neobyte_pending_checkouts');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('neobyte_pending_checkouts', JSON.stringify(pendingCheckouts));
+  }, [pendingCheckouts]);
 
   // States for dynamic system notifications
   const [successToast, setSuccessToast] = useState<{ message: string; description?: string } | null>(null);
@@ -410,6 +423,48 @@ export default function App() {
         setAllPurchasedCards(updatedCards);
         localStorage.setItem('neobyte_purchasedCards', JSON.stringify(updatedCards));
       }
+
+      // Process pendingCheckouts for abandoned cart emails
+      let pendingChanged = false;
+      const updatedPending = await Promise.all(
+        pendingCheckouts.map(async (checkout) => {
+          if (!checkout.notified) {
+            const oneHour = 60 * 60 * 1000;
+            const elapsed = Date.now() - checkout.timestamp;
+            
+            if (elapsed >= oneHour) {
+              // Ensure they didn't actually purchase anything with this email recently
+              const hasPurchased = updatedCards.some((pc: any) => 
+                pc.ownerEmail === checkout.email && 
+                new Date(pc.purchaseDate).getTime() > checkout.timestamp - (24 * 60 * 60 * 1000)
+              );
+              
+              if (!hasPurchased && checkout.email && checkout.email !== 'guest') {
+                pendingChanged = true;
+                try {
+                  await sendEmail('abandoned_cart', checkout.email, {
+                    name: checkout.name,
+                    price: checkout.price,
+                    cardName: checkout.cardName
+                  });
+                } catch(e) {
+                  console.error('Abandoned cart email error:', e);
+                }
+                return { ...checkout, notified: true };
+              } else if (hasPurchased) {
+                // If they purchased, we can mark as notified so we don't check again
+                pendingChanged = true;
+                return { ...checkout, notified: true };
+              }
+            }
+          }
+          return checkout;
+        })
+      );
+      
+      if (pendingChanged) {
+        setPendingCheckouts(updatedPending);
+      }
     };
 
     const interval = setInterval(() => {
@@ -646,7 +701,31 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleProceedToPayment = () => {
+  const handleProceedToPayment = (details: { firstName: string, lastName: string, email: string }) => {
+    if (selectedCard) {
+      const updatedCard = {
+        ...selectedCard,
+        accountHolder: `${details.firstName} ${details.lastName}`,
+        ownerEmail: details.email
+      };
+      setSelectedCard(updatedCard);
+
+      // Track as a pending checkout for abandoned cart logic
+      setPendingCheckouts(prev => [
+        ...prev,
+        {
+          id: `checkout-${Date.now()}`,
+          cardId: updatedCard.id,
+          cardName: updatedCard.name,
+          email: details.email,
+          name: updatedCard.accountHolder,
+          timestamp: Date.now(),
+          price: updatedCard.price,
+          notified: false
+        }
+      ]);
+    }
+    
     setViewState('payment_portal');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -938,7 +1017,7 @@ export default function App() {
                 card={selectedCard}
                 user={user}
                 onBackToDetail={() => setViewState('detail')}
-                onProceedToPayment={() => handleProceedToPayment()}
+                onProceedToPayment={(details) => handleProceedToPayment(details)}
               />
             )}
 

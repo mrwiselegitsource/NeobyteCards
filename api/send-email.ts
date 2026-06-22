@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-export type EmailType = 'welcome' | 'purchase_confirmation' | 'card_activation';
+export type EmailType = 'welcome' | 'purchase_confirmation' | 'card_activation' | 'abandoned_cart';
 
 export interface EmailPayload {
   type: EmailType;
@@ -174,6 +174,36 @@ function buildActivationEmail(to: string, data: EmailPayload['data']) {
   };
 }
 
+function buildAbandonedCartEmail(to: string, data: EmailPayload['data']) {
+  const name = data.name || data.username || 'Client';
+  const siteUrl = data.siteUrl || 'https://neobytebank.replit.app';
+  const cardName = data.cardName || 'Virtual Credit Card';
+  
+  return {
+    from: `"NeoByte Bank" <${process.env.GMAIL_USER}>`,
+    to,
+    subject: 'Complete Your Order — Your Virtual Card is Reserved',
+    html: wrap(`
+      <div class="card">
+        <span class="badge">Pending Payment</span>
+        <h1>Complete Your Checkout</h1>
+        <p class="sub">Your ${cardName} is reserved and waiting for you.</p>
+        <p>Hello <span class="hl">${name}</span>,</p>
+        <p>We noticed you started an order for your new virtual credit card but haven't completed the payment yet.</p>
+        <p>Your card has been securely reserved. Once payment is confirmed, your card details will be securely dispatched to this email address within 5 minutes.</p>
+        
+        <div class="warn" style="margin: 24px 0; background: rgba(173,255,47,.05); border: 1px solid rgba(173,255,47,.2);">
+          <p style="color: ${'#adff2f'}; margin: 0; font-weight: 600;">⚡ Ready for instant activation upon payment completion.</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 32px;">
+          <a href="${siteUrl}" class="btn">Complete Payment Now</a>
+        </div>
+      </div>
+    `)
+  };
+}
+
 export async function sendEmailHandler(req: any, res: any): Promise<void> {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -197,15 +227,22 @@ export async function sendEmailHandler(req: any, res: any): Promise<void> {
     const transporter = getTransporter();
     let mailOptions: nodemailer.SendMailOptions;
 
-    if (payload.type === 'welcome') {
-      mailOptions = buildWelcomeEmail(payload.to, payload.data || {});
-    } else if (payload.type === 'purchase_confirmation') {
-      mailOptions = buildPurchaseEmail(payload.to, payload.data || {});
-    } else if (payload.type === 'card_activation') {
-      mailOptions = buildActivationEmail(payload.to, payload.data || {});
-    } else {
-      res.status(400).json({ error: `Unknown email type: ${payload.type}` });
-      return;
+    switch (payload.type) {
+      case 'welcome':
+        mailOptions = buildWelcomeEmail(payload.to, payload.data || {});
+        break;
+      case 'purchase_confirmation':
+        mailOptions = buildPurchaseEmail(payload.to, payload.data || {});
+        break;
+      case 'card_activation':
+        mailOptions = buildActivationEmail(payload.to, payload.data || {});
+        break;
+      case 'abandoned_cart':
+        mailOptions = buildAbandonedCartEmail(payload.to, payload.data || {});
+        break;
+      default:
+        res.status(400).json({ error: `Unknown email type: ${payload.type}` });
+        return;
     }
 
     await transporter.sendMail(mailOptions);

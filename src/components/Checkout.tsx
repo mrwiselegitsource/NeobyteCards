@@ -6,7 +6,7 @@ interface CheckoutProps {
   card: PrepaidCard;
   user: User;
   onBackToDetail: () => void;
-  onProceedToPayment: () => void;
+  onProceedToPayment: (details: { firstName: string, lastName: string, email: string }) => void;
 }
 
 export const Checkout: React.FC<CheckoutProps> = ({
@@ -27,14 +27,20 @@ export const Checkout: React.FC<CheckoutProps> = ({
     return parts.length > 1 ? parts.slice(1).join(' ') : '';
   });
 
+  const [emailAddress, setEmailAddress] = useState(user.email || '');
+
   const handlePlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName.trim() || !lastName.trim()) {
       setError('Please provide both first and last names.');
       return;
     }
+    if (!emailAddress.trim() || !emailAddress.includes('@')) {
+      setError('Please provide a valid email address for card delivery.');
+      return;
+    }
     setError('');
-    onProceedToPayment();
+    onProceedToPayment({ firstName, lastName, email: emailAddress });
   };
 
   return (
@@ -97,6 +103,21 @@ export const Checkout: React.FC<CheckoutProps> = ({
                     className="w-full bg-white text-black p-2.5 rounded text-sm font-sans outline-none focus:ring-2 focus:ring-[#adff2f]"
                   />
                 </div>
+              </div>
+
+              {/* Email Input (only if not logged in, or always editable if you prefer, but we show it to ensure we capture it) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-white font-sans">
+                  Email Address for Card Delivery <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={emailAddress}
+                  onChange={(e) => setEmailAddress(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full bg-white text-black p-2.5 rounded text-sm font-sans outline-none focus:ring-2 focus:ring-[#adff2f]"
+                />
               </div>
 
               {/* Submit action */}
