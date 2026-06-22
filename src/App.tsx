@@ -131,7 +131,6 @@ export default function App() {
   }, [viewState]);
 
   useEffect(() => {
-  useEffect(() => {
     if (selectedCard) {
       localStorage.setItem('neobyte_selected_card', JSON.stringify(selectedCard));
     } else {
