@@ -81,10 +81,24 @@ export default function App() {
 
   // Tab & Routing State
   const [activeTab, setActiveTab] = useState<'shop' | 'admin' | 'login'>(() => {
-    const saved = localStorage.getItem('neobyte_user_auth');
-    if (saved) {
+    try {
+      const savedTab = localStorage.getItem('neobyte_active_tab');
+      if (savedTab === 'shop' || savedTab === 'admin' || savedTab === 'login') {
+        // Only return admin if explicitly logged in as admin
+        if (savedTab === 'admin') {
+          const auth = localStorage.getItem('neobyte_user_auth');
+          if (auth && JSON.parse(auth).isAdmin) return 'admin';
+          return 'shop';
+        }
+        return savedTab;
+      }
+    } catch (e) {}
+
+    // Fallback logic
+    const savedAuth = localStorage.getItem('neobyte_user_auth');
+    if (savedAuth) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedAuth);
         if (parsed && parsed.isLoggedIn) {
           return 'shop';
         }
@@ -92,8 +106,37 @@ export default function App() {
     }
     return 'login';
   });
-  const [viewState, setViewState] = useState<'catalog' | 'detail' | 'checkout' | 'payment_portal'>('catalog');
-  const [selectedCard, setSelectedCard] = useState<PrepaidCard | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('neobyte_active_tab', activeTab);
+  }, [activeTab]);
+  const [viewState, setViewState] = useState<'catalog' | 'detail' | 'checkout' | 'payment_portal'>(() => {
+    try {
+      const saved = localStorage.getItem('neobyte_view_state');
+      if (saved) return saved as any;
+    } catch (e) {}
+    return 'catalog';
+  });
+  
+  const [selectedCard, setSelectedCard] = useState<PrepaidCard | null>(() => {
+    try {
+      const saved = localStorage.getItem('neobyte_selected_card');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return null;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('neobyte_view_state', viewState);
+  }, [viewState]);
+
+  useEffect(() => {
+    if (selectedCard) {
+      localStorage.setItem('neobyte_selected_card', JSON.stringify(selectedCard));
+    } else {
+      localStorage.removeItem('neobyte_selected_card');
+    }
+  }, [selectedCard]);
 
   // States for dynamic system notifications
   const [successToast, setSuccessToast] = useState<{ message: string; description?: string } | null>(null);

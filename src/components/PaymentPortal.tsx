@@ -15,10 +15,29 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
   onBackToCheckout,
   siteImages
 }) => {
-  const [activeMethod, setActiveMethod] = useState<'mobile' | 'bitcoin' | 'neomail'>('mobile');
+  const [activeMethod, setActiveMethod] = useState<'mobile' | 'bitcoin' | 'neomail'>(() => {
+    try {
+      const saved = localStorage.getItem('neobyte_payment_method');
+      if (saved) return saved as any;
+    } catch (e) {}
+    return 'mobile';
+  });
   const [copiedAddress, setCopiedAddress] = useState(false);
-  const [isMMModalOpen, setIsMMModalOpen] = useState(false);
+  const [isMMModalOpen, setIsMMModalOpen] = useState(() => {
+    try {
+      return localStorage.getItem('neobyte_mm_modal') === 'true';
+    } catch (e) {}
+    return false;
+  });
   const [showVerificationAlert, setShowVerificationAlert] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('neobyte_payment_method', activeMethod);
+  }, [activeMethod]);
+
+  useEffect(() => {
+    localStorage.setItem('neobyte_mm_modal', isMMModalOpen ? 'true' : 'false');
+  }, [isMMModalOpen]);
 
   // Mobile money states
   const [mmCountry, setMmCountry] = useState('United States (USD)');
