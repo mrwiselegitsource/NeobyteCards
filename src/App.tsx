@@ -732,7 +732,7 @@ export default function App() {
   const handlePaymentValidated = async (notes?: string, screenshot?: string | null) => {
     if (!selectedCard) return;
 
-    const billingEmail = user.isLoggedIn && user.email ? user.email : '';
+    const billingEmail = selectedCard.ownerEmail || (user.isLoggedIn && user.email ? user.email : '');
     const ownerIdVal = auth.currentUser ? auth.currentUser.uid : 'guest';
 
     const newPurchase: PurchasedCard = {
