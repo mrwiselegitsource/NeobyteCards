@@ -1,4 +1,4 @@
-export type EmailType = 'welcome' | 'purchase_confirmation' | 'card_activation';
+export type EmailType = 'welcome' | 'purchase_confirmation' | 'card_activation' | 'abandoned_cart';
 
 export interface EmailData {
   name?: string;

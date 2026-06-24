@@ -465,8 +465,6 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({ siteImages
             </div>
           </div>
         </div>
-          </div>
-        </div>
       </section>
 
       {/* FAQ Section */}
