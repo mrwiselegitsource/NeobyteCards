@@ -1,24 +1,30 @@
 import admin from 'firebase-admin';
 
+import firebaseConfig from '../firebase-applet-config.json';
+import { getFirestore } from 'firebase-admin/firestore';
+
 // Initialize Firebase Admin if not already initialized
+let app;
 if (!admin.apps.length) {
   try {
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-      admin.initializeApp({
+      app = admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
       });
       console.log("[Worker] Firebase Admin initialized using Service Account JSON.");
     } else {
       console.warn("[Worker] FIREBASE_SERVICE_ACCOUNT_KEY is missing. Background updates may fail due to Firestore rules.");
-      admin.initializeApp();
+      app = admin.initializeApp();
     }
   } catch (error) {
     console.error("[Worker] Firebase admin init error:", error);
   }
+} else {
+  app = admin.apps[0]!;
 }
 
-const db = admin.firestore();
+const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 export default async function handler(req: any, res: any) {
   // 1. Authorization Check
