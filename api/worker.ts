@@ -1,6 +1,5 @@
 import admin from 'firebase-admin';
 
-import firebaseConfig from '../firebase-applet-config.json';
 import { getFirestore } from 'firebase-admin/firestore';
 
 let initError: any = null;
@@ -32,7 +31,7 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: 'Failed to parse Service Account JSON. Please check your Vercel Environment Variable for extra spaces or missing quotes.', details: initError.message });
   }
 
-  const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+  const db = getFirestore(app, 'remixed-firestore-database-id');
 
   // 1. Authorization Check
   // Allow UptimeRobot to ping this using ?key=YOUR_CRON_SECRET
