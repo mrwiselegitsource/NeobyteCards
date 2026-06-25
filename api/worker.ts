@@ -3,10 +3,12 @@ import admin from 'firebase-admin';
 import firebaseConfig from '../firebase-applet-config.json';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Initialize Firebase Admin if not already initialized
-let app;
-if (!admin.apps.length) {
-  try {
+let initError: any = null;
+
+// Initialize Firebase Admin safely
+let app: any;
+try {
+  if (!admin.apps.length) {
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
       app = admin.initializeApp({
@@ -17,16 +19,21 @@ if (!admin.apps.length) {
       console.warn("[Worker] FIREBASE_SERVICE_ACCOUNT_KEY is missing. Background updates may fail due to Firestore rules.");
       app = admin.initializeApp();
     }
-  } catch (error) {
-    console.error("[Worker] Firebase admin init error:", error);
+  } else {
+    app = admin.apps[0]!;
   }
-} else {
-  app = admin.apps[0]!;
+} catch (error) {
+  console.error("[Worker] Firebase admin init error:", error);
+  initError = error;
 }
 
-const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-
 export default async function handler(req: any, res: any) {
+  if (initError) {
+    return res.status(500).json({ error: 'Failed to parse Service Account JSON. Please check your Vercel Environment Variable for extra spaces or missing quotes.', details: initError.message });
+  }
+
+  const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
   // 1. Authorization Check
   // Allow UptimeRobot to ping this using ?key=YOUR_CRON_SECRET
   const { key } = req.query;
