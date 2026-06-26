@@ -20,6 +20,7 @@ export interface EmailPayload {
     siteUrl?: string;
     paymentMethod?: string;
     orderId?: string;
+    imageURL?: string;
   };
 }
 
@@ -151,6 +152,7 @@ function buildActivationEmail(to: string, data: EmailPayload['data']) {
     subject: `Your NeoByte Card Is Now Active — ${data.cardBrand || 'Virtual Card'}`,
     html: wrap(`
       <div class="card">
+        ${data.imageURL ? `<img src="${data.imageURL}" alt="${data.cardBrand || 'Card'}" style="width: 100%; max-width: 300px; height: auto; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />` : ''}
         <span class="badge badge-green">Card Active</span>
         <h1>Your Card Is Live</h1>
         <p class="sub">Your virtual card credentials are ready to use</p>

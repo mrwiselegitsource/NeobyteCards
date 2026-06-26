@@ -91,6 +91,7 @@ export default async function handler(req: any, res: any) {
                       cvv: newCvv,
                       limit: card.limit,
                       purchaseDate: card.purchaseDate,
+                      imageURL: card.imageURL,
                    }
                 })
              });

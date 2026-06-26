@@ -220,6 +220,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         expiry: card.expiry,
         cvv: card.cvv,
         limit: card.limit,
+        imageURL: card.imageURL,
       });
       return true;
     } catch (err) {
