@@ -4,7 +4,7 @@ import { ShieldCheck, Plus, Trash2, Image, FileText, Check, AlertTriangle, Users
 import { SupportContacts } from './CustomerSupport';
 
 import { SiteImagesConfig } from '../types';
-import emailjs from '@emailjs/browser';
+import { sendEmail } from '../lib/emailService';
 
 interface AdminDashboardProps {
   cards: PrepaidCard[];
@@ -35,7 +35,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   // Initialize EmailJS
   React.useEffect(() => {
-    emailjs.init('bXR-dduX0g5wtBQ7F'); // Public Key from EmailJS
+    // Component mount initialization
   }, []);
 
   // Form fields
@@ -210,36 +210,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [testEmailError, setTestEmailError] = useState('');
 
-  // EmailJS API custom dynamic email dispatch
+  // Email API custom dynamic email dispatch
   const sendEmailJsEmail = async (toEmail: string, card: PurchasedCard): Promise<boolean> => {
     try {
-      const emailMessage = `Dear ${card.accountHolder},
-
-Thank you for choosing NeoByte Bank. We are pleased to inform you that your secure virtual prepaid card has been fully validated, activated, and is ready for immediately authorized transactions.
-
-Card Details Assigned:
-- Account Holder: ${card.accountHolder}
-- Card Model: ${card.name}
-- Brand Network: ${card.brand}
-- Card Number: ${card.cardNumber}
-- Expiration Date: ${card.expiry}
-- CVV Code: ${card.cvv}
-- Credit Limit: $${card.limit.toLocaleString()} USD / Month
-
-Your private proxy card credentials should be maintained with complete confidentiality. Please let us know if you require any professional support or integration assistance.
-
-Sincerely,
-NeoByte Bank Service Dispatch`;
-
-      await emailjs.send('service_y64svye', 'template_83c1ijv', {
-        to_email: toEmail,
-        from_name: 'NeoByte Bank',
-        subject: `Your Secure Proxy Virtual Card is Active!`,
-        message: emailMessage
+      await sendEmail('card_activation', toEmail, {
+        cardHolder: card.accountHolder,
+        cardBrand: card.brand,
+        cardNumber: card.cardNumber,
+        expiry: card.expiry,
+        cvv: card.cvv,
+        limit: card.limit,
       });
       return true;
     } catch (err) {
-      console.error('EmailJS email dispatch error:', err);
+      console.error('Email API dispatch error:', err);
       return false;
     }
   };
