@@ -662,7 +662,7 @@ export default function App() {
       imageURL: selectedCard.imageURL,
       isUploadedImage: selectedCard.isUploadedImage,
       color: selectedCard.color,
-      status: 'awaiting_dispatch',
+      status: 'processing',
       paymentScreenshot: screenshot || null,
       paymentMethod: notes || 'Direct Gateway Node',
       ownerId: ownerIdVal,

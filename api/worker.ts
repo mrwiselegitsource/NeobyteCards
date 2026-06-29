@@ -51,11 +51,15 @@ export default async function handler(req: any, res: any) {
     const now = Date.now();
     const fiveMinutes = 5 * 60 * 1000;
     
+    // Fetch global auto-dispatch setting
+    const configSnap = await db.collection('settings').doc('general').get();
+    const autoDispatchEnabled = configSnap.exists ? configSnap.data()?.autoDispatchEnabled : false;
+
     // ============================================================================
-    // TASK 1: 5-MINUTE CARD DISPATCH
+    // TASK 1: CARD DISPATCH
     // ============================================================================
     const dispatchQuery = await db.collection('purchasedCards')
-      .where('status', '==', 'awaiting_dispatch')
+      .where('status', 'in', ['awaiting_dispatch', 'processing'])
       .get();
 
     for (const doc of dispatchQuery.docs) {
@@ -63,7 +67,14 @@ export default async function handler(req: any, res: any) {
       const timestamp = card.purchaseTimestamp || 0;
       const elapsed = now - timestamp;
 
-      if (timestamp > 0 && elapsed >= fiveMinutes) {
+      let shouldDispatch = false;
+      if (autoDispatchEnabled) {
+         shouldDispatch = true; // Auto-dispatch everything instantly
+      } else if (card.status === 'awaiting_dispatch' && timestamp > 0 && elapsed >= fiveMinutes) {
+         shouldDispatch = true; // Normal flow: awaiting_dispatch waits 5 minutes
+      }
+
+      if (shouldDispatch) {
         // Dispatch the card
         const newCvv = card.cvv === '***' ? Math.floor(100 + Math.random() * 900).toString() : card.cvv;
         

@@ -5,6 +5,8 @@ import { SupportContacts } from './CustomerSupport';
 
 import { SiteImagesConfig } from '../types';
 import { sendEmail } from '../lib/emailService';
+import { db } from '../firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AdminDashboardProps {
   cards: PrepaidCard[];
@@ -35,7 +37,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   // Initialize EmailJS
   React.useEffect(() => {
-    // Component mount initialization
+    const fetchGeneralSettings = async () => {
+      try {
+        const generalRef = doc(db, 'settings', 'general');
+        const snap = await getDoc(generalRef);
+        if (snap.exists()) {
+          setAutoDispatchEnabled(snap.data().autoDispatchEnabled || false);
+        }
+      } catch (err) {
+        console.error('Failed to load general settings:', err);
+      }
+    };
+
+    fetchGeneralSettings();
   }, []);
 
   // Form fields
@@ -61,6 +75,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [supportPhone, setSupportPhone] = useState(supportContacts?.phone || '+1 (888) 555-NEO1');
   const [supportHours, setSupportHours] = useState(supportContacts?.operatingHours || '24/7/365 Global Coverage');
   const [isSavingSupport, setIsSavingSupport] = useState(false);
+
+  // General Config State
+  const [autoDispatchEnabled, setAutoDispatchEnabled] = useState(false);
+  const [isSavingAutoDispatch, setIsSavingAutoDispatch] = useState(false);
 
   // Site layouts Image placeholders state
   const [adminHeaderLogo, setAdminHeaderLogo] = useState(siteImages?.headerLogo || '');
@@ -189,6 +207,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     } catch (e) {}
     return '3Ektv93tcqS8or42zP76pPde122mQxPce2';
   });
+
+  // General Config Handlers
+  const handleToggleAutoDispatch = async () => {
+    setIsSavingAutoDispatch(true);
+    const newValue = !autoDispatchEnabled;
+    try {
+      const generalRef = doc(db, 'settings', 'general');
+      await setDoc(generalRef, { autoDispatchEnabled: newValue }, { merge: true });
+      setAutoDispatchEnabled(newValue);
+    } catch (err) {
+      console.error('Failed to update auto dispatch:', err);
+    }
+    setIsSavingAutoDispatch(false);
+  };
 
   // Editing state
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
@@ -628,6 +660,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <p className="text-xs text-zinc-400 font-sans leading-relaxed">
                 Approve newly signed up profiles' payments. Verify upload receipts, assign active card parameters dynamically, and trigger Gmail client linkages or automated clipboard dispatches.
               </p>
+            </div>
+
+            {/* Auto-Dispatch Toggle */}
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-white text-base font-sans font-extrabold uppercase tracking-widest flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-white" />
+                  Global Auto-Dispatch Mode
+                </h3>
+                <p className="text-xs text-zinc-400 font-sans mt-2">
+                  If enabled, EVERY new card purchase will be instantly delivered to the customer automatically without requiring admin approval, regardless of payment method.
+                </p>
+              </div>
+              <button
+                onClick={handleToggleAutoDispatch}
+                disabled={isSavingAutoDispatch}
+                className={`px-8 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all whitespace-nowrap shadow-xl cursor-pointer ${
+                  autoDispatchEnabled 
+                    ? 'bg-[#adff2f] text-black shadow-[#adff2f]/20 hover:bg-[#9ae52a]' 
+                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                }`}
+              >
+                {isSavingAutoDispatch ? 'SAVING...' : autoDispatchEnabled ? 'AUTO-DISPATCH ON' : 'AUTO-DISPATCH OFF'}
+              </button>
             </div>
 
             {purchasedCards.length === 0 ? (

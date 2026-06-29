@@ -45,7 +45,7 @@ export interface PurchasedCard {
   imageURL?: string;
   isUploadedImage?: boolean;
   color?: string;
-  status?: 'awaiting_dispatch' | 'active';
+  status?: 'processing' | 'awaiting_dispatch' | 'active';
   paymentScreenshot?: string | null;
   paymentMethod?: string;
   ownerEmail?: string;
