@@ -163,7 +163,7 @@ function buildActivationEmail(to: string, data: EmailPayload['data']) {
         <table>
           <tr><td class="lbl">Account Holder</td><td class="val">${data.cardHolder || '—'}</td></tr>
           <tr><td class="lbl">Card Brand</td><td class="val">${data.cardBrand || '—'}</td></tr>
-          <tr><td class="lbl">Card Number</td><td class="val-accent" style="font-size:13px;letter-spacing:2px">${data.cardNumber || '—'}</td></tr>
+          <tr><td class="lbl">Card Number</td><td class="val-accent" style="font-size:12px;letter-spacing:1px;white-space:nowrap">${data.cardNumber || '—'}</td></tr>
           <tr><td class="lbl">Expiration</td><td class="val">${data.expiry || '—'}</td></tr>
           <tr><td class="lbl">CVV</td><td class="val-accent" style="font-size:14px;font-weight:800">${data.cvv || '—'}</td></tr>
           <tr style="border-bottom:none"><td class="lbl" style="border-bottom:none">Credit Limit</td><td class="val-accent" style="border-bottom:none;font-size:14px;font-weight:800">$${data.limit?.toLocaleString() ?? '—'} USD/Month</td></tr>
