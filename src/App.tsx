@@ -22,6 +22,7 @@ import { doc, setDoc, deleteDoc, collection, getDocs, query, where, getDocFromSe
 import { signOut } from 'firebase/auth';
 import { CustomerSupport, SupportContacts } from './components/CustomerSupport';
 import { sendEmail } from './lib/emailService';
+import { generateCardNumber, generateExpiry } from './lib/cardGenerator';
 
 
 export default function App() {
@@ -651,8 +652,8 @@ export default function App() {
       name: selectedCard.name,
       price: selectedCard.price,
       limit: selectedCard.limit,
-      cardNumber: selectedCard.cardNumber,
-      expiry: selectedCard.expiry,
+      cardNumber: generateCardNumber(selectedCard.brand),
+      expiry: generateExpiry(),
       cvv: '***',
       accountHolder: selectedCard.accountHolder,
       purchaseDate: new Date().toISOString().split('T')[0],
