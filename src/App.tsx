@@ -615,7 +615,7 @@ export default function App() {
     if (selectedCard) {
       const updatedCard = {
         ...selectedCard,
-        accountHolder: `${details.firstName} ${details.lastName}`,
+        customerName: `${details.firstName} ${details.lastName}`,
         ownerEmail: details.email
       };
       setSelectedCard(updatedCard);
@@ -628,7 +628,7 @@ export default function App() {
           cardId: updatedCard.id,
           cardName: updatedCard.name,
           email: details.email,
-          name: updatedCard.accountHolder,
+          name: `${details.firstName} ${details.lastName}`,
           timestamp: Date.now(),
           price: updatedCard.price,
           notified: false
@@ -666,6 +666,7 @@ export default function App() {
       status: 'processing',
       paymentScreenshot: screenshot || null,
       paymentMethod: notes || 'Direct Gateway Node',
+      customerName: selectedCard.customerName || (user.isLoggedIn && user.email ? 'Registered Customer' : 'Guest'),
       ownerId: ownerIdVal,
       purchaseTimestamp: Date.now()
     };

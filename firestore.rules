@@ -84,6 +84,8 @@ service cloud.firestore {
         && data.purchaseDate is string && data.purchaseDate.size() <= 32
         && data.isFrozen is bool
         && data.ownerId is string && data.ownerId.size() <= 128
+        && isValOptStr(data, 'ownerEmail', 128)
+        && isValOptStr(data, 'customerName', 128)
         && isValOptStr(data, 'notes', 1024);
     }
 
@@ -109,6 +111,11 @@ service cloud.firestore {
         && isValOptStr(data, 'testimonialAvatar', 1048576)
         && isValOptStr(data, 'getStartedGraphic', 1048576)
         && isValOptStr(data, 'footerLogo', 1048576);
+    }
+
+    // Strict validation for General settings
+    function isValidGeneralSettings(data) {
+      return data.autoDispatchEnabled is bool;
     }
 
     // Strict validation for SupportTicket payload
@@ -158,6 +165,7 @@ service cloud.firestore {
         && (
           (settingsId == 'support' && isValidSupportContacts(incoming()))
           || (settingsId == 'siteImages' && isValidSiteImages(incoming()))
+          || (settingsId == 'general' && isValidGeneralSettings(incoming()))
         );
       allow delete: if isAuthAdmin() || isWebAdmin();
     }

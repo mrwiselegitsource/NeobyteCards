@@ -49,6 +49,7 @@ export interface PurchasedCard {
   paymentScreenshot?: string | null;
   paymentMethod?: string;
   ownerEmail?: string;
+  customerName?: string;
   purchaseTimestamp?: number;
   ownerId?: string;
 }
