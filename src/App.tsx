@@ -691,6 +691,9 @@ export default function App() {
       }
     }
 
+    // Ping the worker to process auto-dispatch immediately
+    fetch('/api/worker?trigger=frontend').catch(err => console.error('Worker trigger error:', err));
+
     // Automated Immediate Order Receipt Email via Nodemailer
     if (billingEmail) {
       const orderNum = newPurchase.id.replace('purchased-', '').substring(0, 8).toUpperCase();

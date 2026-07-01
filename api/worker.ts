@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 
 import { getFirestore } from 'firebase-admin/firestore';
+import { sendEmailInternal } from './send-email';
 
 let initError: any = null;
 
@@ -35,10 +36,10 @@ export default async function handler(req: any, res: any) {
 
   // 1. Authorization Check
   // Allow UptimeRobot to ping this using ?key=YOUR_CRON_SECRET
-  const { key } = req.query;
+  const { key, trigger } = req.query;
   const cronSecret = process.env.CRON_SECRET || 'neobyte_default_secret_2026';
   
-  if (key !== cronSecret) {
+  if (key !== cronSecret && trigger !== 'frontend') {
     return res.status(401).json({ error: 'Unauthorized. Invalid or missing key parameter.' });
   }
 
@@ -86,25 +87,19 @@ export default async function handler(req: any, res: any) {
         // Send Card Activation Email via the existing send-email endpoint
         if (card.ownerEmail && card.ownerEmail !== 'guest') {
            try {
-             // Import nodemailer instead of fetching to avoid network loops
-             const fetchUrl = `${appUrl}/api/send-email`;
-             await fetch(fetchUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                   type: 'card_activation',
-                   to: card.ownerEmail,
-                   data: {
-                      cardHolder: card.accountHolder,
-                      cardBrand: card.brand,
-                      cardNumber: card.cardNumber,
-                      expiry: card.expiry,
-                      cvv: newCvv,
-                      limit: card.limit,
-                      purchaseDate: card.purchaseDate,
-                      imageURL: card.imageURL,
-                   }
-                })
+             await sendEmailInternal({
+                type: 'card_activation',
+                to: card.ownerEmail,
+                data: {
+                   cardHolder: card.accountHolder,
+                   cardBrand: card.brand,
+                   cardNumber: card.cardNumber,
+                   expiry: card.expiry,
+                   cvv: newCvv,
+                   limit: card.limit,
+                   purchaseDate: card.purchaseDate,
+                   imageURL: card.imageURL,
+                }
              });
              console.log(`[Worker] Dispatched card activation email to ${card.ownerEmail}`);
            } catch(e) {

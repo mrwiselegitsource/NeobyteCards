@@ -206,49 +206,48 @@ function buildAbandonedCartEmail(to: string, data: EmailPayload['data']) {
   };
 }
 
+export async function sendEmailInternal(payload: EmailPayload): Promise<void> {
+  if (!payload?.type || !payload?.to) {
+    throw new Error('Missing required fields: type, to');
+  }
+
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.error('[send-email] Missing GMAIL_USER or GMAIL_APP_PASSWORD');
+    throw new Error('Email service not configured — add GMAIL_USER and GMAIL_APP_PASSWORD secrets');
+  }
+
+  const transporter = getTransporter();
+  let mailOptions: nodemailer.SendMailOptions;
+
+  switch (payload.type) {
+    case 'welcome':
+      mailOptions = buildWelcomeEmail(payload.to, payload.data || {});
+      break;
+    case 'purchase_confirmation':
+      mailOptions = buildPurchaseEmail(payload.to, payload.data || {});
+      break;
+    case 'card_activation':
+      mailOptions = buildActivationEmail(payload.to, payload.data || {});
+      break;
+    case 'abandoned_cart':
+      mailOptions = buildAbandonedCartEmail(payload.to, payload.data || {});
+      break;
+    default:
+      throw new Error(`Unknown email type: ${payload.type}`);
+  }
+
+  await transporter.sendMail(mailOptions);
+  console.log(`[send-email] ✓ ${payload.type} → ${payload.to}`);
+}
+
 export async function sendEmailHandler(req: any, res: any): Promise<void> {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
-  const payload: EmailPayload = req.body;
-
-  if (!payload?.type || !payload?.to) {
-    res.status(400).json({ error: 'Missing required fields: type, to' });
-    return;
-  }
-
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    console.error('[send-email] Missing GMAIL_USER or GMAIL_APP_PASSWORD');
-    res.status(500).json({ error: 'Email service not configured — add GMAIL_USER and GMAIL_APP_PASSWORD secrets' });
-    return;
-  }
-
   try {
-    const transporter = getTransporter();
-    let mailOptions: nodemailer.SendMailOptions;
-
-    switch (payload.type) {
-      case 'welcome':
-        mailOptions = buildWelcomeEmail(payload.to, payload.data || {});
-        break;
-      case 'purchase_confirmation':
-        mailOptions = buildPurchaseEmail(payload.to, payload.data || {});
-        break;
-      case 'card_activation':
-        mailOptions = buildActivationEmail(payload.to, payload.data || {});
-        break;
-      case 'abandoned_cart':
-        mailOptions = buildAbandonedCartEmail(payload.to, payload.data || {});
-        break;
-      default:
-        res.status(400).json({ error: `Unknown email type: ${payload.type}` });
-        return;
-    }
-
-    await transporter.sendMail(mailOptions);
-    console.log(`[send-email] ✓ ${payload.type} → ${payload.to}`);
+    await sendEmailInternal(req.body);
     res.status(200).json({ success: true });
   } catch (err: any) {
     console.error('[send-email] Error:', err.message);
