@@ -151,11 +151,11 @@ service cloud.firestore {
 
     // Purchased cards durable collection rules
     match /purchasedCards/{purchaseId} {
-      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow get: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow list: if (isSignedIn() && resource.data.ownerId == request.auth.uid) || isAuthAdmin() || isWebAdmin();
+      allow get: if (isSignedIn() && resource.data.ownerId == request.auth.uid) || isAuthAdmin() || isWebAdmin();
       allow create: if isValidId(purchaseId) && isSignedIn() && incoming().ownerId == request.auth.uid && isValidPurchasedCard(incoming());
-      allow update: if isValidId(purchaseId) && isSignedIn() && existing().ownerId == request.auth.uid && incoming().ownerId == request.auth.uid && isValidPurchasedCard(incoming());
-      allow delete: if isValidId(purchaseId) && isSignedIn() && existing().ownerId == request.auth.uid;
+      allow update: if (isValidId(purchaseId) && isSignedIn() && existing().ownerId == request.auth.uid && incoming().ownerId == request.auth.uid && isValidPurchasedCard(incoming())) || (isAuthAdmin() || isWebAdmin());
+      allow delete: if (isValidId(purchaseId) && isSignedIn() && existing().ownerId == request.auth.uid) || isAuthAdmin() || isWebAdmin();
     }
 
     // Support/Config settings rules
