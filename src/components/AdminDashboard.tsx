@@ -686,6 +686,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
             </div>
 
+            {/* Clear Dispatched History Action */}
+            {purchasedCards.length > 0 && purchasedCards.some(c => c.status === 'active') && (
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to clear off ALL fully dispatched and active test cards? This will permanently delete them from history.')) {
+                      purchasedCards.forEach(c => {
+                        if (c.status === 'active' && onDeletePurchasedCard) {
+                          onDeletePurchasedCard(c.id);
+                        }
+                      });
+                      setAlertMessage({ type: 'success', text: 'All dispatched cards have been cleared from history.' });
+                    }
+                  }}
+                  className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold uppercase text-[10px] tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-2 shadow-sm"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Clear All Dispatched History
+                </button>
+              </div>
+            )}
+
             {purchasedCards.length === 0 ? (
               <div className="py-20 text-center flex flex-col items-center justify-center space-y-4 max-w-sm mx-auto bg-zinc-950/60 p-8 rounded-2xl border border-zinc-900">
                 <FileText className="w-12 h-12 text-zinc-700 mx-auto" />
