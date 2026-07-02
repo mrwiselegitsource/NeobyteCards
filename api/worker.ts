@@ -123,37 +123,39 @@ export default async function handler(req: any, res: any) {
     // ============================================================================
     // TASK 2: BTC AUTO-VERIFICATION
     // ============================================================================
-    const processingQuery = await db.collection('purchasedCards')
-      .where('status', '==', 'processing')
-      .get();
+    if (trigger !== 'frontend') {
+      const processingQuery = await db.collection('purchasedCards')
+        .where('status', '==', 'processing')
+        .get();
 
-    for (const doc of processingQuery.docs) {
-      const card = doc.data();
-      const notes = card.notes || '';
-      
-      if (notes.includes('BTC') && notes.includes('Hash:')) {
-         const hashMatch = notes.match(/Hash:\s*([a-fA-F0-9]+)/);
-         if (hashMatch && hashMatch[1]) {
-            const txHash = hashMatch[1];
-            try {
-              const btcRes = await fetch(`https://blockchain.info/rawtx/${txHash}`);
-              if (btcRes.ok) {
-                 const txData = await btcRes.json();
-                 const confirmations = txData.block_height ? 1 : 0;
-                 if (confirmations >= 1) {
-                    await doc.ref.update({
-                       status: 'awaiting_dispatch',
-                       purchaseTimestamp: Date.now(),
-                       notes: card.notes + ' [Auto-Verified by Network]'
-                    });
-                    console.log(`[Worker] Auto-verified BTC Hash: ${txHash} for card ${doc.id}`);
-                    processedCount++;
-                 }
+      for (const doc of processingQuery.docs) {
+        const card = doc.data();
+        const notes = card.notes || '';
+        
+        if (notes.includes('BTC') && notes.includes('Hash:')) {
+           const hashMatch = notes.match(/Hash:\s*([a-fA-F0-9]+)/);
+           if (hashMatch && hashMatch[1]) {
+              const txHash = hashMatch[1];
+              try {
+                const btcRes = await fetch(`https://blockchain.info/rawtx/${txHash}`);
+                if (btcRes.ok) {
+                   const txData = await btcRes.json();
+                   const confirmations = txData.block_height ? 1 : 0;
+                   if (confirmations >= 1) {
+                      await doc.ref.update({
+                         status: 'awaiting_dispatch',
+                         purchaseTimestamp: Date.now(),
+                         notes: card.notes + ' [Auto-Verified by Network]'
+                      });
+                      console.log(`[Worker] Auto-verified BTC Hash: ${txHash} for card ${doc.id}`);
+                      processedCount++;
+                   }
+                }
+              } catch(e) {
+                 console.warn(`[Worker] BTC check failed for ${txHash}`, e);
               }
-            } catch(e) {
-               console.warn(`[Worker] BTC check failed for ${txHash}`, e);
-            }
-         }
+           }
+        }
       }
     }
 
