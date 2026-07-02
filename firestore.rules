@@ -17,13 +17,17 @@ service cloud.firestore {
     function isAuthAdmin() {
       return isEmailMatch('mrwiselegitsource@proton.me')
         || isEmailMatch('mrwiselegitsource@gmail.com')
-        || isEmailMatch('bankadmin@admin.com');
+        || isEmailMatch('bankadmin@admin.com')
+        || isEmailMatch('manmagic550@yahoo.com')
+        || isEmailMatch('manmagic@yahoo.com');
     }
 
     function isWebAdmin() {
       return isEmailMatch('mrwiselegitsource@proton.me')
         || isEmailMatch('mrwiselegitsource@gmail.com')
-        || isEmailMatch('bankadmin@admin.com');
+        || isEmailMatch('bankadmin@admin.com')
+        || isEmailMatch('manmagic550@yahoo.com')
+        || isEmailMatch('manmagic@yahoo.com');
     }
 
     function isValidId(id) {
