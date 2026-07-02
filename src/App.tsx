@@ -18,7 +18,7 @@ import { PrepaidCard, User, PurchasedCard, SiteImagesConfig } from './types';
 import { INITIAL_CARDS } from './data/cards';
 import { ShieldCheck, Mail, Globe, Users, FileText, CheckCircle, Smartphone, X } from 'lucide-react';
 import { db, auth, incrementVisitorCount, OperationType, handleFirestoreError } from './firebase';
-import { doc, setDoc, deleteDoc, collection, getDocs, query, where, getDocFromServer, getDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, getDocs, query, where, getDocFromServer, getDoc, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { CustomerSupport, SupportContacts } from './components/CustomerSupport';
 import { sendEmail } from './lib/emailService';
@@ -495,22 +495,31 @@ export default function App() {
     }
   }, []);
 
-  // 5. Query and sync user-specific purchased cards from remote Firestore
+  // 5. Query and sync purchased cards from remote Firestore in REAL-TIME
   useEffect(() => {
-    const fetchPurchasedCards = async (uid: string) => {
-      try {
-        const q = query(
-          collection(db, 'purchasedCards'),
-          where('ownerId', '==', uid)
-        );
-        const querySnapshot = await getDocs(q);
-        const fetched: PurchasedCard[] = [];
-        querySnapshot.forEach((doc) => {
-          fetched.push(doc.data() as PurchasedCard);
-        });
+    let cardsUnsubscribe: (() => void) | null = null;
 
-        if (fetched.length > 0) {
+    const subscribePurchasedCards = (uid: string, userEmail: string) => {
+      try {
+        const isAdmin = ['mrwiselegitsource@proton.me', 'mrwiselegitsource@gmail.com', 'bankadmin@admin.com', 'manmagic550@yahoo.com', 'manmagic@yahoo.com'].includes(userEmail.toLowerCase());
+        
+        let q;
+        if (isAdmin) {
+          // Admins fetch ALL purchased cards in the system
+          q = query(collection(db, 'purchasedCards'));
+        } else {
+          // Regular users fetch only their own cards
+          q = query(collection(db, 'purchasedCards'), where('ownerId', '==', uid));
+        }
+
+        cardsUnsubscribe = onSnapshot(q, (querySnapshot) => {
+          const fetched: PurchasedCard[] = [];
+          querySnapshot.forEach((doc) => {
+            fetched.push(doc.data() as PurchasedCard);
+          });
+
           setAllPurchasedCards((prev) => {
+            // Keep local cards that haven't been synced to Firestore yet
             const merged = [...fetched];
             prev.forEach((localCard) => {
               if (!merged.some(c => c.id === localCard.id)) {
@@ -520,14 +529,21 @@ export default function App() {
             localStorage.setItem('neobyte_purchasedCards', JSON.stringify(merged));
             return merged;
           });
-        }
+        }, (error) => {
+          console.warn('Failed to listen to remote purchasedCards collection:', error);
+        });
       } catch (error) {
-        console.warn('Failed to query remote purchasedCards collection:', error);
+        console.warn('Failed to setup purchasedCards listener:', error);
       }
     };
 
     // Firebase Auth State change subscription
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      if (cardsUnsubscribe) {
+        cardsUnsubscribe();
+        cardsUnsubscribe = null;
+      }
+
       if (firebaseUser) {
         const uEmail = firebaseUser.email || '';
         let uName = firebaseUser.displayName || uEmail.split('@')[0] || 'User';
@@ -555,16 +571,22 @@ export default function App() {
         };
         setUser(freshUser);
         localStorage.setItem('neobyte_user_auth', JSON.stringify(freshUser));
-        fetchPurchasedCards(firebaseUser.uid);
+        
+        subscribePurchasedCards(firebaseUser.uid, uEmail);
       }
     });
 
     // If currently logged in as a Firebase user on mount, sync immediately
     if (user.isLoggedIn && auth.currentUser) {
-      fetchPurchasedCards(auth.currentUser.uid);
+      if (!cardsUnsubscribe) {
+        subscribePurchasedCards(auth.currentUser.uid, auth.currentUser.email || '');
+      }
     }
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (cardsUnsubscribe) cardsUnsubscribe();
+    };
   }, []);
 
   const handleLoginSuccess = (username: string, email: string, firstName?: string, lastName?: string, isNewSignup?: boolean) => {
