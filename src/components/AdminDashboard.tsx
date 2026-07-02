@@ -936,35 +936,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
-                              <button
-                                onClick={async () => {
-                                  setAlertMessage({ type: 'success', text: `Initiating automated dispatch to ${order.ownerEmail}...` });
-                                  const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order);
-                                  if (success) {
-                                    setAlertMessage({ type: 'success', text: `Selected Card specifications dispatched successfully to ${order.ownerEmail}!` });
-                                  } else {
-                                    setAlertMessage({ type: 'error', text: 'Auto-dispatch failed. Please try again.' });
-                                  }
-                                }}
-                                className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 text-teal-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-800"
-                                title="Dispatch automated secure email via EmailJS"
-                              >
-                                <Mail className="w-3.5 h-3.5" />
-                                <span>Resend Email</span>
-                              </button>
+                              {isPending && autoDispatchEnabled ? (
+                                <div className="px-3 py-1.5 bg-[#adff2f]/10 border border-[#adff2f]/20 rounded-lg flex items-center gap-2 text-[#adff2f] font-mono text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                  Auto-Dispatching (Live in ~5s)
+                                </div>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={async () => {
+                                      setAlertMessage({ type: 'success', text: `Initiating automated dispatch to ${order.ownerEmail}...` });
+                                      const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order);
+                                      if (success) {
+                                        setAlertMessage({ type: 'success', text: `Selected Card specifications dispatched successfully to ${order.ownerEmail}!` });
+                                      } else {
+                                        setAlertMessage({ type: 'error', text: 'Auto-dispatch failed. Please try again.' });
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 text-teal-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-800"
+                                    title="Dispatch automated secure email via EmailJS"
+                                  >
+                                    <Mail className="w-3.5 h-3.5" />
+                                    <span>{isPending ? 'Manual Dispatch' : 'Resend Email'}</span>
+                                  </button>
 
-                              <button
-                                onClick={() => {
-                                  setEditingOrderId(order.id);
-                                  setNewCardNumber(order.cardNumber);
-                                  setNewExpiry(order.expiry);
-                                  setNewCVV(order.cvv === '***' ? Math.floor(100 + Math.random() * 900).toString() : order.cvv);
-                                }}
-                                className="px-3 py-1.5 bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-300 font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 text-[10px]"
-                              >
-                                <Edit className="w-3.5 h-3.5 text-lime-400" />
-                                <span>Edit Parameters</span>
-                              </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingOrderId(order.id);
+                                      setNewCardNumber(order.cardNumber);
+                                      setNewExpiry(order.expiry);
+                                      setNewCVV(order.cvv === '***' ? Math.floor(100 + Math.random() * 900).toString() : order.cvv);
+                                    }}
+                                    className="px-3 py-1.5 bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-300 font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 text-[10px]"
+                                  >
+                                    <Edit className="w-3.5 h-3.5 text-lime-400" />
+                                    <span>Edit Parameters</span>
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         )}
