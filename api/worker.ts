@@ -79,14 +79,14 @@ export default async function handler(req: any, res: any) {
         // Dispatch the card
         const newCvv = card.cvv === '***' ? Math.floor(100 + Math.random() * 900).toString() : card.cvv;
         
-        await doc.ref.update({
-          status: 'active',
-          cvv: newCvv
-        });
-
         // Send Card Activation Email via the existing send-email endpoint
+        let emailSent = false;
         if (card.ownerEmail && card.ownerEmail !== 'guest') {
            try {
+             // Add a 2.5-second delay to prevent Gmail SMTP rate limiting 
+             // since the Order Confirmation email was sent literally milliseconds ago
+             await new Promise(resolve => setTimeout(resolve, 2500));
+             
              await sendEmailInternal({
                 type: 'card_activation',
                 to: card.ownerEmail,
@@ -102,11 +102,21 @@ export default async function handler(req: any, res: any) {
                 }
              });
              console.log(`[Worker] Dispatched card activation email to ${card.ownerEmail}`);
+             emailSent = true;
            } catch(e) {
              console.error(`[Worker] Failed to send dispatch email to ${card.ownerEmail}`, e);
            }
+        } else {
+           emailSent = true; // no email to send, so proceed
         }
-        processedCount++;
+
+        if (emailSent) {
+          await doc.ref.update({
+            status: 'active',
+            cvv: newCvv
+          });
+          processedCount++;
+        }
       }
     }
 
