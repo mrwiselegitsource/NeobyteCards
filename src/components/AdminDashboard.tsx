@@ -708,7 +708,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       className={`p-6 rounded-2xl bg-zinc-950 border transition-all ${
                         isPending 
                           ? 'border-yellow-500/20 shadow-[0_0_24px_rgba(234,179,8,0.02)]' 
-                          : 'border-zinc-900'
+                          : 'border-zinc-900/50 opacity-60 hover:opacity-100 scale-[0.98]'
                       }`}
                     >
                       <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
@@ -943,22 +943,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </div>
                               ) : (
                                 <>
-                                  <button
-                                    onClick={async () => {
-                                      setAlertMessage({ type: 'success', text: `Initiating automated dispatch to ${order.ownerEmail}...` });
-                                      const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order);
-                                      if (success) {
-                                        setAlertMessage({ type: 'success', text: `Selected Card specifications dispatched successfully to ${order.ownerEmail}!` });
-                                      } else {
-                                        setAlertMessage({ type: 'error', text: 'Auto-dispatch failed. Please try again.' });
-                                      }
-                                    }}
-                                    className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 text-teal-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-800"
-                                    title="Dispatch automated secure email via EmailJS"
-                                  >
-                                    <Mail className="w-3.5 h-3.5" />
-                                    <span>{isPending ? 'Manual Dispatch' : 'Resend Email'}</span>
-                                  </button>
+                                  {isPending ? (
+                                    <button
+                                      onClick={async () => {
+                                        setAlertMessage({ type: 'success', text: `Initiating automated dispatch to ${order.ownerEmail}...` });
+                                        const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order);
+                                        if (success) {
+                                          setAlertMessage({ type: 'success', text: `Selected Card specifications dispatched successfully to ${order.ownerEmail}!` });
+                                        } else {
+                                          setAlertMessage({ type: 'error', text: 'Auto-dispatch failed. Please try again.' });
+                                        }
+                                      }}
+                                      className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 text-teal-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-800"
+                                      title="Dispatch automated secure email"
+                                    >
+                                      <Mail className="w-3.5 h-3.5" />
+                                      <span>Manual Dispatch</span>
+                                    </button>
+                                  ) : (
+                                    <div className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1.5 opacity-80 cursor-not-allowed">
+                                      <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
+                                      <span>Dispatched Already</span>
+                                    </div>
+                                  )}
 
                                   <button
                                     onClick={() => {
