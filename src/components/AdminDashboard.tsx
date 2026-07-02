@@ -727,10 +727,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   return (
                     <div 
                       key={order.id} 
-                      className={`p-6 rounded-2xl bg-zinc-950 border transition-all ${
+                      className={`p-6 rounded-2xl bg-zinc-950 border-2 transition-all ${
                         isPending 
-                          ? 'border-yellow-500/20 shadow-[0_0_24px_rgba(234,179,8,0.02)]' 
-                          : 'border-zinc-900/50 opacity-60 hover:opacity-100 scale-[0.98]'
+                          ? 'border-blue-500 shadow-[0_0_24px_rgba(59,130,246,0.2)]' 
+                          : 'border-emerald-500 shadow-[0_0_24px_rgba(16,185,129,0.2)]'
                       }`}
                     >
                       <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
@@ -743,7 +743,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </span>
                             
                             {isPending ? (
-                              <span className="px-2.5 py-1 text-[9px] font-mono font-bold uppercase bg-yellow-500/15 border border-yellow-500/20 text-yellow-500 rounded-lg animate-pulse">
+                              <span className="px-2.5 py-1 text-[9px] font-mono font-bold uppercase bg-blue-500/15 border border-blue-500/20 text-blue-500 rounded-lg animate-pulse">
                                 awaiting dispatch
                               </span>
                             ) : (
