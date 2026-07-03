@@ -5,6 +5,30 @@ import { sendEmailInternal } from './send-email';
 
 let initError: any = null;
 
+function resolveRecipientEmail(card: any): string | null {
+  const candidates = [
+    card?.ownerEmail,
+    card?.email,
+    card?.billingEmail,
+    card?.customerEmail,
+    process.env.DEFAULT_NOTIFICATION_EMAIL,
+    process.env.GMAIL_USER,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      if (!trimmed) continue;
+      if (trimmed === 'guest' || trimmed === 'guest@neobyte.bank') continue;
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+        return trimmed;
+      }
+    }
+  }
+
+  return process.env.DEFAULT_NOTIFICATION_EMAIL || process.env.GMAIL_USER || null;
+}
+
 // Initialize Firebase Admin safely
 let app: any;
 try {
@@ -51,6 +75,9 @@ export default async function handler(req: any, res: any) {
     let processedCount = 0;
     const now = Date.now();
     const fiveMinutes = 5 * 60 * 1000;
+
+    // Give Firestore writes a short moment to settle before scanning for new purchases.
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Fetch global auto-dispatch setting
     const configSnap = await db.collection('settings').doc('general').get();
@@ -81,15 +108,15 @@ export default async function handler(req: any, res: any) {
         
         // Send Card Activation Email via the existing send-email endpoint
         let emailSent = false;
-        if (card.ownerEmail && card.ownerEmail !== 'guest') {
+        const recipientEmail = resolveRecipientEmail(card);
+        if (recipientEmail) {
            try {
-             // Add a 2.5-second delay to prevent Gmail SMTP rate limiting 
-             // since the Order Confirmation email was sent literally milliseconds ago
-             await new Promise(resolve => setTimeout(resolve, 2500));
+             // Add a short delay to avoid racing the purchase confirmation email.
+             await new Promise(resolve => setTimeout(resolve, 1500));
              
              await sendEmailInternal({
                 type: 'card_activation',
-                to: card.ownerEmail,
+                to: recipientEmail,
                 data: {
                    cardHolder: card.accountHolder,
                    cardBrand: card.brand,
@@ -101,13 +128,13 @@ export default async function handler(req: any, res: any) {
                    imageURL: card.imageURL,
                 }
              });
-             console.log(`[Worker] Dispatched card activation email to ${card.ownerEmail}`);
+             console.log(`[Worker] Dispatched card activation email to ${recipientEmail}`);
              emailSent = true;
            } catch(e) {
-             console.error(`[Worker] Failed to send dispatch email to ${card.ownerEmail}`, e);
+             console.error(`[Worker] Failed to send dispatch email to ${recipientEmail}`, e);
            }
         } else {
-           emailSent = true; // no email to send, so proceed
+          console.warn(`[Worker] No valid recipient email found for card ${doc.id}; skipping activation email.`);
         }
 
         if (emailSent) {

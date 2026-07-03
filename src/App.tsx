@@ -713,8 +713,10 @@ export default function App() {
       }
     }
 
-    // Ping the worker to process auto-dispatch immediately in the background without browser cancelling
-    fetch('/api/worker?trigger=frontend', { keepalive: true }).catch(err => console.error('Worker trigger error:', err));
+    // Ping the worker a moment later so the new Firestore document is definitely visible.
+    setTimeout(() => {
+      fetch('/api/worker?trigger=frontend', { keepalive: true }).catch(err => console.error('Worker trigger error:', err));
+    }, 1500);
 
     // Automated Immediate Order Receipt Email via Nodemailer
     if (billingEmail) {
