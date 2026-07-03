@@ -853,24 +853,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="flex flex-wrap gap-2.5 pt-2">
                               <button
                                 onClick={async () => {
-                                  const updatedCard: PurchasedCard = {
+                                  const baseUpdatedCard: PurchasedCard = {
                                     ...order,
                                     cardNumber: newCardNumber.trim() || order.cardNumber,
                                     expiry: newExpiry.trim() || order.expiry,
                                     cvv: newCVV.trim() || order.cvv,
-                                    status: 'active'
                                   };
-                                  if (onUpdatePurchasedCard) {
-                                    onUpdatePurchasedCard(updatedCard);
-                                  }
                                   setEditingOrderId(null);
                                   setAlertMessage({
                                     type: 'success',
                                     text: `Dispatching automated secure email with parameters and design preview to ${order.ownerEmail}...`
                                   });
 
-                                  const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', updatedCard);
+                                  const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', baseUpdatedCard);
                                   if (success) {
+                                    const dispatchedCard: PurchasedCard = {
+                                      ...baseUpdatedCard,
+                                      status: 'active'
+                                    };
+                                    if (onUpdatePurchasedCard) {
+                                      onUpdatePurchasedCard(dispatchedCard);
+                                    }
                                     setAlertMessage({
                                       type: 'success',
                                       text: `Secure Asset Dispatched! Complete card parameters emailed successfully to ${order.ownerEmail}.`
@@ -977,6 +980,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         setAlertMessage({ type: 'success', text: `Initiating automated dispatch to ${order.ownerEmail}...` });
                                         const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order);
                                         if (success) {
+                                          const dispatchedCard: PurchasedCard = {
+                                            ...order,
+                                            status: 'active'
+                                          };
+                                          if (onUpdatePurchasedCard) {
+                                            onUpdatePurchasedCard(dispatchedCard);
+                                          }
                                           setAlertMessage({ type: 'success', text: `Selected Card specifications dispatched successfully to ${order.ownerEmail}!` });
                                         } else {
                                           setAlertMessage({ type: 'error', text: 'Auto-dispatch failed. Please try again.' });
