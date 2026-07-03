@@ -139,7 +139,7 @@ Card Limit: $${data.limit?.toLocaleString() ?? '—'} USD
 Amount Paid: $${data.price?.toFixed(2) ?? '0.00'}
 Purchase Date: ${data.purchaseDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
 
-You will receive another email once your card is fully activated.
+You will receive another email once your card is fully ready.
 
 Thank you,
 NeoByte Bank`,
@@ -177,7 +177,7 @@ function buildActivationEmail(to: string, data: EmailPayload['data']) {
     text: `Your NeoByte Card Is Now Active
 
 Hello ${name},
-Your virtual card has been activated and is ready for use.
+Your credit card has been activated and is ready for use.
 
 Account Holder: ${data.cardHolder || '—'}
 Card Brand: ${data.cardBrand || '—'}
@@ -193,12 +193,12 @@ Thank you,
 NeoByte Bank`,
     html: wrap(`
       <div class="card">
-        ${data.imageURL ? `<img src="${data.imageURL}" alt="${data.cardBrand || 'Card'}" style="width: 100%; max-width: 300px; height: auto; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />` : ''}
         <span class="badge badge-green">Card Active</span>
         <h1>Your Card Is Live</h1>
         <p class="sub">Your virtual card credentials are ready to use</p>
         <p>Hello <span class="hl">${name}</span>,</p>
         <p>Your secure virtual prepaid card has been successfully validated, activated, and is now fully operational. Please maintain strict confidentiality regarding your credentials.</p>
+        ${data.imageURL ? `<div style="margin: 24px 0 20px; text-align: center;"><img src="${data.imageURL}" alt="${data.cardBrand || 'Card'}" style="width: 100%; max-width: 320px; height: auto; border-radius: 14px; box-shadow: 0 12px 28px rgba(0,0,0,0.45);" /></div>` : ''}
         <hr>
         <p class="section-label">Card Credentials</p>
         <table>
