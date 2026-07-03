@@ -93,6 +93,13 @@ function buildWelcomeEmail(to: string, data: EmailPayload['data']) {
     from: `"NeoByte Bank" <${process.env.GMAIL_USER}>`,
     to,
     subject: 'Welcome to NeoByte Bank — Account Activated',
+    text: `Welcome to NeoByte Bank!
+
+Hello ${name},
+Your account has been successfully activated. Visit our portal to start using your virtual card: ${siteUrl}
+
+Thank you,
+NeoByte Bank`,
     html: wrap(`
       <div class="card">
         <span class="badge">Account Activated</span>
@@ -119,6 +126,23 @@ function buildPurchaseEmail(to: string, data: EmailPayload['data']) {
     from: `"NeoByte Bank" <${process.env.GMAIL_USER}>`,
     to,
     subject: `Order Confirmed — ${data.cardName || 'Virtual Card'} #${orderId}`,
+    text: `Order Confirmed
+
+Hello ${name},
+Your order has been received and is being processed.
+
+Order ID: #${orderId}
+Product: ${data.cardName || data.cardBrand || 'Virtual Card'}
+Brand: ${data.cardBrand || '—'}
+Account Holder: ${data.cardHolder || '—'}
+Card Limit: $${data.limit?.toLocaleString() ?? '—'} USD
+Amount Paid: $${data.price?.toFixed(2) ?? '0.00'}
+Purchase Date: ${data.purchaseDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+
+You will receive another email once your card is fully activated.
+
+Thank you,
+NeoByte Bank`,
     html: wrap(`
       <div class="card">
         <span class="badge">Order Confirmed</span>
@@ -150,6 +174,23 @@ function buildActivationEmail(to: string, data: EmailPayload['data']) {
     from: `"NeoByte Bank" <${process.env.GMAIL_USER}>`,
     to,
     subject: `Your NeoByte Card Is Now Active — ${data.cardBrand || 'Virtual Card'}`,
+    text: `Your NeoByte Card Is Now Active
+
+Hello ${name},
+Your virtual card has been activated and is ready for use.
+
+Account Holder: ${data.cardHolder || '—'}
+Card Brand: ${data.cardBrand || '—'}
+Card Number: ${data.cardNumber || '—'}
+Expiration: ${data.expiry || '—'}
+CVV: ${data.cvv || '—'}
+Credit Limit: $${data.limit?.toLocaleString() ?? '—'} USD/Month
+Purchase Date: ${data.purchaseDate || '—'}
+
+Keep these credentials private and secure.
+
+Thank you,
+NeoByte Bank`,
     html: wrap(`
       <div class="card">
         ${data.imageURL ? `<img src="${data.imageURL}" alt="${data.cardBrand || 'Card'}" style="width: 100%; max-width: 300px; height: auto; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />` : ''}
@@ -185,6 +226,15 @@ function buildAbandonedCartEmail(to: string, data: EmailPayload['data']) {
     from: `"NeoByte Bank" <${process.env.GMAIL_USER}>`,
     to,
     subject: 'Complete Your Order — Your Virtual Card is Reserved',
+    text: `Hello ${name},
+
+We noticed you started an order for your ${cardName} but haven't completed payment yet.
+Your card has been reserved and will be dispatched to this email address once payment is confirmed.
+
+Complete your checkout here: ${siteUrl}
+
+Thank you,
+NeoByte Bank`,
     html: wrap(`
       <div class="card">
         <span class="badge">Pending Payment</span>
@@ -206,9 +256,110 @@ function buildAbandonedCartEmail(to: string, data: EmailPayload['data']) {
   };
 }
 
+function buildPlainText(payload: EmailPayload): string {
+  switch (payload.type) {
+    case 'welcome':
+      return `Welcome to NeoByte Bank!
+
+Hello ${payload.data.name || payload.data.username || 'Client'},
+Your account has been successfully activated. Visit our site to start using your virtual card.`;
+    case 'purchase_confirmation':
+      return `Order Confirmed
+
+Hello ${payload.data.name || payload.data.cardHolder || 'Client'},
+Your order has been received and is being processed.
+Order ID: ${payload.data.orderId || Date.now().toString().slice(-8).toUpperCase()}
+Product: ${payload.data.cardName || payload.data.cardBrand || 'Virtual Card'}
+Amount Paid: $${payload.data.price?.toFixed(2) ?? '0.00'}
+Purchase Date: ${payload.data.purchaseDate || new Date().toLocaleDateString()}`;
+    case 'card_activation':
+      return `Your NeoByte Card Is Now Active
+
+Hello ${payload.data.cardHolder || payload.data.name || 'Client'},
+Your virtual card has been activated and is ready for use.
+
+Account Holder: ${payload.data.cardHolder || '—'}
+Card Brand: ${payload.data.cardBrand || '—'}
+Card Number: ${payload.data.cardNumber || '—'}
+Expiration: ${payload.data.expiry || '—'}
+CVV: ${payload.data.cvv || '—'}
+Limit: $${payload.data.limit?.toLocaleString() ?? '—'} USD/Month
+
+Keep these credentials private and secure.`;
+    case 'abandoned_cart':
+      return `Complete Your Order
+
+Hello ${payload.data.name || payload.data.username || 'Client'},
+You have an order pending payment for ${payload.data.cardName || 'a virtual card'}.
+Complete payment to receive your card details.`;
+    default:
+      return 'NeoByte Bank Email';
+  }
+}
+
+async function sendEmailViaEmailJs(payload: EmailPayload): Promise<{ service: 'emailjs'; status: number; result: any }> {
+  const serviceId = process.env.EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID;
+  const userId = process.env.EMAILJS_USER_ID || process.env.EMAILJS_PUBLIC_KEY;
+
+  if (!serviceId || !templateId || !userId) {
+    throw new Error('EmailJS is not configured. Please set EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID and EMAILJS_USER_ID.');
+  }
+
+  const templateParams = {
+    to_email: payload.to,
+    ...payload.data,
+  };
+
+  const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      service_id: serviceId,
+      template_id: templateId,
+      user_id: userId,
+      template_params: templateParams,
+    }),
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(`EmailJS send failed: ${response.status} ${response.statusText} ${JSON.stringify(result)}`);
+  }
+
+  return { service: 'emailjs', status: response.status, result };
+}
+
 export async function sendEmailInternal(payload: EmailPayload): Promise<void> {
   if (!payload?.type || !payload?.to) {
     throw new Error('Missing required fields: type, to');
+  }
+
+  const mailOptions = (() => {
+    switch (payload.type) {
+      case 'welcome':
+        return buildWelcomeEmail(payload.to, payload.data || {});
+      case 'purchase_confirmation':
+        return buildPurchaseEmail(payload.to, payload.data || {});
+      case 'card_activation':
+        return buildActivationEmail(payload.to, payload.data || {});
+      case 'abandoned_cart':
+        return buildAbandonedCartEmail(payload.to, payload.data || {});
+      default:
+        throw new Error(`Unknown email type: ${payload.type}`);
+    }
+  })();
+
+  if (payload.type === 'card_activation' && process.env.EMAILJS_SERVICE_ID && process.env.EMAILJS_TEMPLATE_ID && (process.env.EMAILJS_USER_ID || process.env.EMAILJS_PUBLIC_KEY)) {
+    try {
+      const emailJsResult = await sendEmailViaEmailJs(payload);
+      console.log(`[send-email] ✓ ${payload.type} → ${payload.to} via EmailJS`, emailJsResult);
+      return;
+    } catch (error) {
+      console.warn('[send-email] EmailJS fallback failed, falling back to Gmail SMTP:', error);
+    }
   }
 
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
@@ -217,27 +368,19 @@ export async function sendEmailInternal(payload: EmailPayload): Promise<void> {
   }
 
   const transporter = getTransporter();
-  let mailOptions: nodemailer.SendMailOptions;
+  await transporter.verify();
 
-  switch (payload.type) {
-    case 'welcome':
-      mailOptions = buildWelcomeEmail(payload.to, payload.data || {});
-      break;
-    case 'purchase_confirmation':
-      mailOptions = buildPurchaseEmail(payload.to, payload.data || {});
-      break;
-    case 'card_activation':
-      mailOptions = buildActivationEmail(payload.to, payload.data || {});
-      break;
-    case 'abandoned_cart':
-      mailOptions = buildAbandonedCartEmail(payload.to, payload.data || {});
-      break;
-    default:
-      throw new Error(`Unknown email type: ${payload.type}`);
+  const info = await transporter.sendMail(mailOptions);
+  console.log(`[send-email] ✓ ${payload.type} → ${payload.to}`, {
+    messageId: info.messageId,
+    accepted: info.accepted,
+    rejected: info.rejected,
+    response: info.response,
+  });
+
+  if (!info.accepted || info.accepted.length === 0) {
+    throw new Error(`Email was not accepted by SMTP server. Response: ${info.response}`);
   }
-
-  await transporter.sendMail(mailOptions);
-  console.log(`[send-email] ✓ ${payload.type} → ${payload.to}`);
 }
 
 export async function sendEmailHandler(req: any, res: any): Promise<void> {
