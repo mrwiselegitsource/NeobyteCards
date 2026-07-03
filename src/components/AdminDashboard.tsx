@@ -306,6 +306,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Interactive feedback state
   const [alertMessage, setAlertMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const sortedOrders = [...purchasedCards].sort((a, b) => {
+    const aTime = a.purchaseTimestamp ?? (a.purchaseDate ? new Date(a.purchaseDate).getTime() : 0);
+    const bTime = b.purchaseTimestamp ?? (b.purchaseDate ? new Date(b.purchaseDate).getTime() : 0);
+    return bTime - aTime;
+  });
+
   const handleSaveGateways = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -720,7 +726,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6" id="orders-cards-stack">
-                {purchasedCards.map((order) => {
+                {sortedOrders.map((order) => {
                   const isPending = order.status === 'awaiting_dispatch';
                   const isEditingThis = editingOrderId === order.id;
 
