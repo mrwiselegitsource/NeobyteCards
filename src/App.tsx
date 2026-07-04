@@ -685,7 +685,7 @@ export default function App() {
       imageURL: selectedCard.imageURL,
       isUploadedImage: selectedCard.isUploadedImage,
       color: selectedCard.color,
-      status: 'processing',
+      status: 'awaiting_dispatch',
       paymentScreenshot: screenshot || null,
       paymentMethod: notes || 'Direct Gateway Node',
       customerName: selectedCard.customerName || (user.isLoggedIn && user.email ? 'Registered Customer' : 'Guest'),

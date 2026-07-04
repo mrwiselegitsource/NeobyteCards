@@ -86,64 +86,16 @@ export default async function handler(req: any, res: any) {
     // ============================================================================
     // TASK 1: CARD DISPATCH
     // ============================================================================
+    // Card credential delivery is now handled manually by the admin dashboard.
+    // The worker no longer sends activation emails automatically.
     const dispatchQuery = await db.collection('purchasedCards')
       .where('status', 'in', ['awaiting_dispatch', 'processing'])
       .get();
 
     for (const doc of dispatchQuery.docs) {
       const card = doc.data();
-      const timestamp = card.purchaseTimestamp || 0;
-      const elapsed = now - timestamp;
-
-      let shouldDispatch = false;
-      if (autoDispatchEnabled) {
-         shouldDispatch = true; // Auto-dispatch everything instantly
-      } else if (card.status === 'awaiting_dispatch' && timestamp > 0 && elapsed >= fiveMinutes) {
-         shouldDispatch = true; // Normal flow: awaiting_dispatch waits 5 minutes
-      }
-
-      if (shouldDispatch) {
-        // Dispatch the card
-        const newCvv = card.cvv === '***' ? Math.floor(100 + Math.random() * 900).toString() : card.cvv;
-        
-        // Send Card Activation Email via the existing send-email endpoint
-        let emailSent = false;
-        const recipientEmail = resolveRecipientEmail(card);
-        if (recipientEmail) {
-           try {
-             // Add a short delay to avoid racing the purchase confirmation email.
-             await new Promise(resolve => setTimeout(resolve, 1500));
-             
-             await sendEmailInternal({
-                type: 'card_activation',
-                to: recipientEmail,
-                data: {
-                   cardHolder: card.accountHolder,
-                   cardBrand: card.brand,
-                   cardNumber: card.cardNumber,
-                   expiry: card.expiry,
-                   cvv: newCvv,
-                   limit: card.limit,
-                   purchaseDate: card.purchaseDate,
-                   imageURL: card.imageURL,
-                }
-             });
-             console.log(`[Worker] Dispatched card activation email to ${recipientEmail}`);
-             emailSent = true;
-           } catch(e) {
-             console.error(`[Worker] Failed to send dispatch email to ${recipientEmail}`, e);
-           }
-        } else {
-          console.warn(`[Worker] No valid recipient email found for card ${doc.id}; skipping activation email.`);
-        }
-
-        if (emailSent) {
-          await doc.ref.update({
-            status: 'active',
-            cvv: newCvv
-          });
-          processedCount++;
-        }
+      if (card.status === 'processing' && autoDispatchEnabled) {
+        await doc.ref.update({ status: 'awaiting_dispatch' });
       }
     }
 

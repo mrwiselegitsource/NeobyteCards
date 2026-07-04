@@ -16,6 +16,8 @@ export interface EmailData {
   paymentMethod?: string;
   orderId?: string;
   imageURL?: string;
+  customMessage?: string;
+  emailSubject?: string;
 }
 
 export async function sendEmail(

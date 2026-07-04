@@ -21,6 +21,8 @@ export interface EmailPayload {
     paymentMethod?: string;
     orderId?: string;
     imageURL?: string;
+    customMessage?: string;
+    emailSubject?: string;
   };
 }
 
@@ -39,6 +41,15 @@ const DARK = '#0a0a0a';
 const CARD_BG = '#111111';
 const TEXT = '#e4e4e7';
 const MUTED = '#71717a';
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 function wrap(body: string): string {
   return `<!DOCTYPE html>
@@ -88,7 +99,7 @@ function wrap(body: string): string {
 
 function buildWelcomeEmail(to: string, data: EmailPayload['data']) {
   const name = data.name || data.username || 'Client';
-  const siteUrl = data.siteUrl || 'https://neobytebank.replit.app';
+  const siteUrl = data.siteUrl || 'https://neobytebankcards.vercel.app';
   return {
     from: `"NeoByte Bank" <${process.env.GMAIL_USER}>`,
     to,
@@ -170,15 +181,19 @@ NeoByte Bank`,
 
 function buildActivationEmail(to: string, data: EmailPayload['data']) {
   const name = data.cardHolder || data.name || 'Client';
+  const customMessage = data.customMessage?.trim();
   return {
     from: `"NeoByte Bank" <${process.env.GMAIL_USER}>`,
     to,
-    subject: `Your NeoByte Card Is Now Active — ${data.cardBrand || 'Virtual Card'}`,
+    subject: data.emailSubject || `Your NeoByte Card Is Now Active — ${data.cardBrand || 'Virtual Card'}`,
     text: `Your NeoByte Card Is Now Active
 
 Hello ${name},
-Your credit card has been activated and is ready for use.
-
+Your card delivery update is ready.
+${customMessage ? `
+Admin Message:
+${customMessage}
+` : ''}
 Account Holder: ${data.cardHolder || '—'}
 Card Brand: ${data.cardBrand || '—'}
 Card Number: ${data.cardNumber || '—'}
@@ -198,6 +213,7 @@ NeoByte Bank`,
         <p class="sub">Your virtual card credentials are ready to use</p>
         <p>Hello <span class="hl">${name}</span>,</p>
         <p>Your secure virtual prepaid card has been successfully validated, activated, and is now fully operational. Please maintain strict confidentiality regarding your credentials.</p>
+        ${customMessage ? `<div style="margin: 18px 0; padding: 14px 16px; border: 1px solid rgba(173,255,47,0.2); background: rgba(173,255,47,0.08); border-radius: 12px;"><p style="margin: 0; color: ${TEXT}; line-height: 1.6;"><strong style="color:${G};">Admin Message:</strong><br />${escapeHtml(customMessage)}</p></div>` : ''}
         ${data.imageURL ? `<div style="margin: 24px 0 20px; text-align: center;"><img src="${data.imageURL}" alt="${data.cardBrand || 'Card'}" style="width: 100%; max-width: 320px; height: auto; border-radius: 14px; box-shadow: 0 12px 28px rgba(0,0,0,0.45);" /></div>` : ''}
         <hr>
         <p class="section-label">Card Credentials</p>

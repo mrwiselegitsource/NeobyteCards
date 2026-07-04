@@ -236,14 +236,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newCardNumber, setNewCardNumber] = useState('');
   const [newExpiry, setNewExpiry] = useState('');
   const [newCVV, setNewCVV] = useState('');
+  const [dispatchDrafts, setDispatchDrafts] = useState<Record<string, { subject: string; message: string }>>({});
 
   // EmailJS Configuration states
   const [testEmail, setTestEmail] = useState('');
   const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [testEmailError, setTestEmailError] = useState('');
 
-  // Email API custom dynamic email dispatch
-  const sendEmailJsEmail = async (toEmail: string, card: PurchasedCard): Promise<boolean> => {
+  const getDefaultDispatchDraft = (order: PurchasedCard) => {
+    const amount = order.price?.toFixed(2) ?? '0.00';
+    return {
+      subject: `Your NeoByte card is ready — ${order.name}`,
+      message: `Hello ${order.accountHolder || 'valued customer'},\n\nYour payment for ${order.name} has been received and your card delivery is ready for review.\n\nCard: ${order.name}\nPrice: $${amount}\nAccount Holder: ${order.accountHolder || '—'}\n\nPlease keep these details secure.`,
+    };
+  };
+
+  const sendEmailJsEmail = async (
+    toEmail: string,
+    card: PurchasedCard,
+    options?: { subject?: string; message?: string }
+  ): Promise<boolean> => {
     try {
       await sendEmail('card_activation', toEmail, {
         cardHolder: card.accountHolder,
@@ -253,6 +265,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         cvv: card.cvv,
         limit: card.limit,
         imageURL: card.imageURL,
+        customMessage: options?.message,
+        emailSubject: options?.subject,
       });
       return true;
     } catch (err) {
@@ -311,6 +325,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const bTime = b.purchaseTimestamp ?? (b.purchaseDate ? new Date(b.purchaseDate).getTime() : 0);
     return bTime - aTime;
   });
+
+  const pendingOrders = sortedOrders.filter(order => order.status !== 'active');
+  const deliveredOrders = sortedOrders.filter(order => order.status === 'active');
+
+  const handleSendDispatch = async (order: PurchasedCard) => {
+    const draft = dispatchDrafts[order.id] || getDefaultDispatchDraft(order);
+    setAlertMessage({ type: 'success', text: `Sending custom delivery message to ${order.ownerEmail || 'the customer'}...` });
+    const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order, {
+      subject: draft.subject,
+      message: draft.message,
+    });
+
+    if (success) {
+      const deliveredCard: PurchasedCard = {
+        ...order,
+        status: 'active',
+        deliveredAt: new Date().toISOString(),
+        deliveryNote: draft.message,
+      };
+      if (onUpdatePurchasedCard) {
+        onUpdatePurchasedCard(deliveredCard);
+      }
+      setAlertMessage({ type: 'success', text: `Delivery email sent and card marked as delivered for ${order.ownerEmail || 'the customer'}.` });
+    } else {
+      setAlertMessage({ type: 'error', text: 'Delivery email failed. Please try again.' });
+    }
+  };
 
   const handleSaveGateways = (e: React.FormEvent) => {
     e.preventDefault();
@@ -725,20 +766,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6" id="orders-cards-stack">
-                {sortedOrders.map((order) => {
-                  const isPending = order.status === 'awaiting_dispatch';
-                  const isEditingThis = editingOrderId === order.id;
+              <div className="space-y-8" id="orders-cards-stack">
+                {pendingOrders.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-sans font-bold uppercase tracking-wider text-blue-400">Not Delivered Yet ({pendingOrders.length})</h3>
+                      <span className="text-[10px] uppercase text-zinc-500 font-mono">Awaiting admin dispatch</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-6">
+                      {pendingOrders.map((order) => {
+                        const isPending = true;
+                        const isEditingThis = editingOrderId === order.id;
+                        const draft = dispatchDrafts[order.id] || getDefaultDispatchDraft(order);
 
-                  return (
-                    <div 
-                      key={order.id} 
-                      className={`p-6 rounded-2xl bg-zinc-950 border-2 transition-all ${
-                        isPending 
-                          ? 'border-blue-500 shadow-[0_0_24px_rgba(59,130,246,0.2)]' 
-                          : 'border-emerald-500 shadow-[0_0_24px_rgba(16,185,129,0.2)]'
-                      }`}
-                    >
+                        return (
+                          <div 
+                            key={order.id} 
+                            className="p-6 rounded-2xl bg-zinc-950 border-2 border-blue-500 shadow-[0_0_24px_rgba(59,130,246,0.2)]"
+                          >
                       <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
                         
                         {/* Left: Metadata & Client Details */}
@@ -859,24 +904,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     expiry: newExpiry.trim() || order.expiry,
                                     cvv: newCVV.trim() || order.cvv,
                                   };
+                                  const draft = dispatchDrafts[order.id] || getDefaultDispatchDraft(baseUpdatedCard);
                                   setEditingOrderId(null);
                                   setAlertMessage({
                                     type: 'success',
-                                    text: `Dispatching automated secure email with parameters and design preview to ${order.ownerEmail}...`
+                                    text: `Sending custom delivery email to ${order.ownerEmail}...`
                                   });
 
-                                  const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', baseUpdatedCard);
+                                  const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', baseUpdatedCard, {
+                                    subject: draft.subject,
+                                    message: draft.message,
+                                  });
                                   if (success) {
                                     const dispatchedCard: PurchasedCard = {
                                       ...baseUpdatedCard,
-                                      status: 'active'
+                                      status: 'active',
+                                      deliveredAt: new Date().toISOString(),
+                                      deliveryNote: draft.message,
                                     };
                                     if (onUpdatePurchasedCard) {
                                       onUpdatePurchasedCard(dispatchedCard);
                                     }
                                     setAlertMessage({
                                       type: 'success',
-                                      text: `Secure Asset Dispatched! Complete card parameters emailed successfully to ${order.ownerEmail}.`
+                                      text: `Delivery email sent and card marked as delivered for ${order.ownerEmail}.`
                                     });
                                   } else {
                                     setAlertMessage({
@@ -888,18 +939,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-sans font-extrabold text-xs uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
                               >
                                   <Mail className="w-4 h-4 text-black" />
-                                  <span>Save & Clean Auto-Dispatch</span>
+                                  <span>Send Custom Delivery</span>
                                 </button>
 
                               <button
                                 onClick={() => {
-                                  // Update & Open Gmail
                                   const updatedCard: PurchasedCard = {
                                     ...order,
                                     cardNumber: newCardNumber.trim() || order.cardNumber,
                                     expiry: newExpiry.trim() || order.expiry,
                                     cvv: newCVV.trim() || order.cvv,
-                                    status: 'active'
                                   };
                                   if (onUpdatePurchasedCard) {
                                     onUpdatePurchasedCard(updatedCard);
@@ -907,10 +956,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   setEditingOrderId(null);
                                   setAlertMessage({
                                     type: 'success',
-                                    text: `Order successfully updated! Opening Gmail composer fallback.`
+                                    text: `Order details updated. You can send delivery manually from the pending section.`
                                   });
 
-                                  // Gmail link assembly
                                   const emailBody = `Dear ${order.accountHolder},\n\nWe are pleased to inform you that your secure virtual proxy card has been successfully activated and is fully operational.\n\nHere are your secure card credentials:\n- Account Holder: ${order.accountHolder}\n- Card Brand: ${order.brand}\n- Card Number: ${newCardNumber}\n- Expiration: ${newExpiry}\n- CVV: ${newCVV}\n- Credit Limit: $${order.limit.toLocaleString()} USD / Month\n- Purchase Date: ${order.purchaseDate}\n\nPlease keep these card parameters completely private and secure.\n\nSincerely,\nNeoByte Bank Service Dispatch`;
                                   const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(order.ownerEmail || 'manmagic@yahoo.com')}&su=${encodeURIComponent('Your Live NeoByte Proxy Credit is Active!')}&body=${encodeURIComponent(emailBody)}`;
                                   window.open(gmailUrl, '_blank');
@@ -923,13 +971,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                               <button
                                 onClick={() => {
-                                  // Update & Copy to Clipboard
                                   const updatedCard: PurchasedCard = {
                                     ...order,
                                     cardNumber: newCardNumber.trim() || order.cardNumber,
                                     expiry: newExpiry.trim() || order.expiry,
                                     cvv: newCVV.trim() || order.cvv,
-                                    status: 'active'
                                   };
                                   if (onUpdatePurchasedCard) {
                                     onUpdatePurchasedCard(updatedCard);
@@ -958,68 +1004,69 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                           </div>
                         ) : (
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
-                            <div className="space-y-0.5 text-left font-sans">
-                              <span className="text-zinc-[550] uppercase text-zinc-500 text-[10px]">Secure proxy assigned details</span>
-                              <span className="text-white block font-bold font-mono">
-                                {order.cardNumber.substring(0,4)} **** **** {order.cardNumber.substring(12,16)} (Exp: {order.expiry} CVV: {order.cvv})
-                              </span>
-                            </div>
+                          <div className="space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+                              <div className="space-y-0.5 text-left font-sans">
+                                <span className="text-zinc-[550] uppercase text-zinc-500 text-[10px]">Secure proxy assigned details</span>
+                                <span className="text-white block font-bold font-mono">
+                                  {order.cardNumber.substring(0,4)} **** **** {order.cardNumber.substring(12,16)} (Exp: {order.expiry} CVV: {order.cvv})
+                                </span>
+                              </div>
 
-                            <div className="flex flex-wrap items-center gap-2">
-                              {isPending && autoDispatchEnabled ? (
-                                <div className="px-3 py-1.5 bg-[#adff2f]/10 border border-[#adff2f]/20 rounded-lg flex items-center gap-2 text-[#adff2f] font-mono text-[10px] font-bold uppercase tracking-wider animate-pulse">
-                                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                                  Auto-Dispatching (Live in ~5s)
-                                </div>
-                              ) : (
-                                <>
-                                  {isPending ? (
-                                    <button
-                                      onClick={async () => {
-                                        setAlertMessage({ type: 'success', text: `Initiating automated dispatch to ${order.ownerEmail}...` });
-                                        const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order);
-                                        if (success) {
-                                          const dispatchedCard: PurchasedCard = {
-                                            ...order,
-                                            status: 'active'
-                                          };
-                                          if (onUpdatePurchasedCard) {
-                                            onUpdatePurchasedCard(dispatchedCard);
-                                          }
-                                          setAlertMessage({ type: 'success', text: `Selected Card specifications dispatched successfully to ${order.ownerEmail}!` });
-                                        } else {
-                                          setAlertMessage({ type: 'error', text: 'Auto-dispatch failed. Please try again.' });
-                                        }
-                                      }}
-                                      className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 text-teal-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-800"
-                                      title="Dispatch automated secure email"
-                                    >
-                                      <Mail className="w-3.5 h-3.5" />
-                                      <span>Manual Dispatch</span>
-                                    </button>
-                                  ) : (
-                                    <div className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1.5 opacity-80 cursor-not-allowed">
-                                      <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
-                                      <span>Dispatched Already</span>
-                                    </div>
-                                  )}
-
+                              <div className="flex flex-wrap items-center gap-2">
+                                {isPending ? (
                                   <button
-                                    onClick={() => {
-                                      setEditingOrderId(order.id);
-                                      setNewCardNumber(order.cardNumber);
-                                      setNewExpiry(order.expiry);
-                                      setNewCVV(order.cvv === '***' ? Math.floor(100 + Math.random() * 900).toString() : order.cvv);
-                                    }}
-                                    className="px-3 py-1.5 bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-300 font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 text-[10px]"
+                                    onClick={() => handleSendDispatch(order)}
+                                    className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 text-teal-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-800"
+                                    title="Send custom delivery email"
                                   >
-                                    <Edit className="w-3.5 h-3.5 text-lime-400" />
-                                    <span>Edit Parameters</span>
+                                    <Mail className="w-3.5 h-3.5" />
+                                    <span>Send Delivery</span>
                                   </button>
-                                </>
-                              )}
+                                ) : (
+                                  <div className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1.5 opacity-80 cursor-not-allowed">
+                                    <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
+                                    <span>Delivered</span>
+                                  </div>
+                                )}
+
+                                <button
+                                  onClick={() => {
+                                    setEditingOrderId(order.id);
+                                    setNewCardNumber(order.cardNumber);
+                                    setNewExpiry(order.expiry);
+                                    setNewCVV(order.cvv === '***' ? Math.floor(100 + Math.random() * 900).toString() : order.cvv);
+                                  }}
+                                  className="px-3 py-1.5 bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-300 font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 text-[10px]"
+                                >
+                                  <Edit className="w-3.5 h-3.5 text-lime-400" />
+                                  <span>Edit Parameters</span>
+                                </button>
+                              </div>
                             </div>
+
+                            {isPending && (
+                              <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 space-y-3">
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Custom delivery subject</label>
+                                  <input
+                                    type="text"
+                                    value={draft.subject}
+                                    onChange={(e) => setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultDispatchDraft(order)), subject: e.target.value } }))}
+                                    className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white text-xs font-sans"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Custom delivery message</label>
+                                  <textarea
+                                    rows={3}
+                                    value={draft.message}
+                                    onChange={(e) => setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultDispatchDraft(order)), message: e.target.value } }))}
+                                    className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white text-xs font-sans"
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1027,6 +1074,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                   );
                 })}
+                    </div>
+                  </div>
+                )}
+
+                {deliveredOrders.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-sans font-bold uppercase tracking-wider text-emerald-400">Delivered ({deliveredOrders.length})</h3>
+                      <span className="text-[10px] uppercase text-zinc-500 font-mono">Marked as delivered</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-6">
+                      {deliveredOrders.map((order) => (
+                        <div key={order.id} className="p-6 rounded-2xl bg-zinc-950 border-2 border-emerald-500 shadow-[0_0_24px_rgba(16,185,129,0.2)]">
+                          <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
+                            <div className="space-y-4 flex-1">
+                              <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-widest bg-zinc-900 px-2.5 py-1 text-zinc-400 rounded-lg border border-zinc-850">
+                                  Order: {order.brand}
+                                </span>
+                                <span className="px-2.5 py-1 text-[9px] font-mono font-bold uppercase bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 rounded-lg">
+                                  delivered
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                                <div className="space-y-1">
+                                  <span className="text-zinc-[550] uppercase block text-zinc-500">Customer Email</span>
+                                  <span className="text-white font-bold select-all truncate block">{order.ownerEmail || 'manmagic550@yahoo.com'}</span>
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="text-zinc-[550] uppercase block text-zinc-500">Account Holder</span>
+                                  <span className="text-[#adff2f] font-bold block">{order.accountHolder}</span>
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="text-zinc-[550] uppercase block text-zinc-500">Date Purchased</span>
+                                  <span className="text-zinc-300 block">{order.purchaseDate}</span>
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="text-zinc-[550] uppercase block text-zinc-500">Retail Price paid</span>
+                                  <span className="text-zinc-300 block font-bold">${order.price.toFixed(2)} USD</span>
+                                </div>
+                              </div>
+                              {order.deliveryNote && (
+                                <div className="bg-zinc-900/40 p-3.5 border border-zinc-900 rounded-xl text-xs text-zinc-300 font-sans">
+                                  <span className="text-[10px] uppercase text-zinc-500 font-mono block">Admin Delivery Note</span>
+                                  <p className="mt-1 whitespace-pre-wrap">{order.deliveryNote}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

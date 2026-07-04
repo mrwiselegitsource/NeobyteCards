@@ -52,6 +52,8 @@ export interface PurchasedCard {
   customerName?: string;
   purchaseTimestamp?: number;
   ownerId?: string;
+  deliveryNote?: string;
+  deliveredAt?: string;
 }
 
 export interface PaymentDetails {
