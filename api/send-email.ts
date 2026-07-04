@@ -12,6 +12,7 @@ export interface EmailPayload {
     cardNumber?: string;
     cardBrand?: string;
     cardHolder?: string;
+    customerName?: string;
     expiry?: string;
     cvv?: string;
     limit?: number;
@@ -180,7 +181,7 @@ NeoByte Bank`,
 }
 
 function buildActivationEmail(to: string, data: EmailPayload['data']) {
-  const name = data.cardHolder || data.name || 'Client';
+  const name = data.customerName || data.name || 'Client';
   const customMessage = data.customMessage?.trim();
   return {
     from: `"NeoByte Bank" <${process.env.GMAIL_USER}>`,
@@ -213,7 +214,7 @@ NeoByte Bank`,
         <p class="sub">Your virtual card credentials are ready to use</p>
         <p>Hello <span class="hl">${name}</span>,</p>
         <p>Your secure virtual prepaid card has been successfully validated, activated, and is now fully operational. Please maintain strict confidentiality regarding your credentials.</p>
-        ${customMessage ? `<div style="margin: 18px 0; padding: 14px 16px; border: 1px solid rgba(173,255,47,0.2); background: rgba(173,255,47,0.08); border-radius: 12px;"><p style="margin: 0; color: ${TEXT}; line-height: 1.6;"><strong style="color:${G};">Admin Message:</strong><br />${escapeHtml(customMessage)}</p></div>` : ''}
+        ${customMessage ? `<div style="margin: 18px 0; padding: 14px 16px; border: 1px solid rgba(173,255,47,0.2); background: rgba(173,255,47,0.08); border-radius: 12px;"><p style="margin: 0; color: ${TEXT}; line-height: 1.6;">${escapeHtml(customMessage)}</p></div>` : ''}
         ${data.imageURL ? `<div style="margin: 24px 0 20px; text-align: center;"><img src="${data.imageURL}" alt="${data.cardBrand || 'Card'}" style="width: 100%; max-width: 320px; height: auto; border-radius: 14px; box-shadow: 0 12px 28px rgba(0,0,0,0.45);" /></div>` : ''}
         <hr>
         <p class="section-label">Card Credentials</p>

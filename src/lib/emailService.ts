@@ -7,6 +7,7 @@ export interface EmailData {
   cardNumber?: string;
   cardBrand?: string;
   cardHolder?: string;
+  customerName?: string;
   expiry?: string;
   cvv?: string;
   limit?: number;

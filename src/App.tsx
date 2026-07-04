@@ -722,7 +722,7 @@ export default function App() {
     if (billingEmail) {
       const orderNum = newPurchase.id.replace('purchased-', '').substring(0, 8).toUpperCase();
       sendEmail('purchase_confirmation', billingEmail, {
-        name: user.firstName || user.username,
+        name: newPurchase.customerName || user.firstName || user.username || 'Customer',
         cardName: newPurchase.name,
         cardBrand: newPurchase.brand,
         cardHolder: newPurchase.accountHolder,

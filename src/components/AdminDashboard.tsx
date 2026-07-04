@@ -237,17 +237,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newExpiry, setNewExpiry] = useState('');
   const [newCVV, setNewCVV] = useState('');
   const [dispatchDrafts, setDispatchDrafts] = useState<Record<string, { subject: string; message: string }>>({});
+  const [savedCustomMessages, setSavedCustomMessages] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('neobyte_saved_dispatch_messages');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed.filter((value): value is string => typeof value === 'string');
+      }
+    } catch (e) {}
+    return [];
+  });
+  const [newCustomMessage, setNewCustomMessage] = useState('');
+  const [messageTemplateSelections, setMessageTemplateSelections] = useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    localStorage.setItem('neobyte_saved_dispatch_messages', JSON.stringify(savedCustomMessages));
+  }, [savedCustomMessages]);
 
   // EmailJS Configuration states
   const [testEmail, setTestEmail] = useState('');
   const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [testEmailError, setTestEmailError] = useState('');
 
+  const getRecipientName = (order: PurchasedCard) => {
+    return order.customerName || order.ownerEmail?.split('@')[0] || 'valued customer';
+  };
+
   const getDefaultDispatchDraft = (order: PurchasedCard) => {
     const amount = order.price?.toFixed(2) ?? '0.00';
+    const recipientName = getRecipientName(order);
     return {
       subject: `Your NeoByte card is ready — ${order.name}`,
-      message: `Hello ${order.accountHolder || 'valued customer'},\n\nYour payment for ${order.name} has been received and your card delivery is ready for review.\n\nCard: ${order.name}\nPrice: $${amount}\nAccount Holder: ${order.accountHolder || '—'}\n\nPlease keep these details secure.`,
+      message: `Hello ${recipientName},\n\nYour payment for ${order.name} has been received and your card delivery is ready for review.\n\nCard: ${order.name}\nPrice: $${amount}\nCustomer: ${recipientName}\n\nPlease keep these details secure.`,
     };
   };
 
@@ -265,6 +286,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         cvv: card.cvv,
         limit: card.limit,
         imageURL: card.imageURL,
+        customerName: card.customerName || getRecipientName(card),
         customMessage: options?.message,
         emailSubject: options?.subject,
       });
@@ -351,6 +373,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     } else {
       setAlertMessage({ type: 'error', text: 'Delivery email failed. Please try again.' });
     }
+  };
+
+  const handleSaveCustomMessage = () => {
+    const trimmed = newCustomMessage.trim();
+    if (!trimmed) {
+      setAlertMessage({ type: 'error', text: 'Type a custom message before saving it.' });
+      return;
+    }
+
+    setSavedCustomMessages(prev => prev.includes(trimmed) ? prev : [trimmed, ...prev].slice(0, 8));
+    setNewCustomMessage('');
+    setAlertMessage({ type: 'success', text: 'Reusable custom message saved for future dispatches.' });
   };
 
   const handleSaveGateways = (e: React.FormEvent) => {
@@ -739,8 +773,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button
                   onClick={() => {
                     if (confirm('Are you sure you want to clear off ALL fully dispatched and active test cards? This will permanently delete them from history.')) {
-                      purchasedCards.forEach(c => {
-                        if (c.status === 'active' && onDeletePurchasedCard) {
+                      const activeCards = purchasedCards.filter(c => c.status === 'active');
+                      activeCards.forEach(c => {
+                        if (onDeletePurchasedCard) {
                           onDeletePurchasedCard(c.id);
                         }
                       });
@@ -773,7 +808,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <h3 className="text-sm font-sans font-bold uppercase tracking-wider text-blue-400">Not Delivered Yet ({pendingOrders.length})</h3>
                       <span className="text-[10px] uppercase text-zinc-500 font-mono">Awaiting admin dispatch</span>
                     </div>
-                    <div className="grid grid-cols-1 gap-6">
+                            <div className="space-y-4">
                       {pendingOrders.map((order) => {
                         const isPending = true;
                         const isEditingThis = editingOrderId === order.id;
@@ -959,7 +994,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     text: `Order details updated. You can send delivery manually from the pending section.`
                                   });
 
-                                  const emailBody = `Dear ${order.accountHolder},\n\nWe are pleased to inform you that your secure virtual proxy card has been successfully activated and is fully operational.\n\nHere are your secure card credentials:\n- Account Holder: ${order.accountHolder}\n- Card Brand: ${order.brand}\n- Card Number: ${newCardNumber}\n- Expiration: ${newExpiry}\n- CVV: ${newCVV}\n- Credit Limit: $${order.limit.toLocaleString()} USD / Month\n- Purchase Date: ${order.purchaseDate}\n\nPlease keep these card parameters completely private and secure.\n\nSincerely,\nNeoByte Bank Service Dispatch`;
+                                  const recipientName = getRecipientName(order);
+                                  const emailBody = `Dear ${recipientName},\n\nWe are pleased to inform you that your secure virtual proxy card has been successfully activated and is fully operational.\n\nHere are your secure card credentials:\n- Customer: ${recipientName}\n- Card Brand: ${order.brand}\n- Card Number: ${newCardNumber}\n- Expiration: ${newExpiry}\n- CVV: ${newCVV}\n- Credit Limit: $${order.limit.toLocaleString()} USD / Month\n- Purchase Date: ${order.purchaseDate}\n\nPlease keep these card parameters completely private and secure.\n\nSincerely,\nNeoByte Bank Service Dispatch`;
                                   const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(order.ownerEmail || 'manmagic@yahoo.com')}&su=${encodeURIComponent('Your Live NeoByte Proxy Credit is Active!')}&body=${encodeURIComponent(emailBody)}`;
                                   window.open(gmailUrl, '_blank');
                                 }}
@@ -986,7 +1022,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     text: `Order updated and parameters copied to clipboard!`
                                   });
 
-                                  const emailBody = `Dear ${order.accountHolder},\n\nWe are pleased to inform you that your secure virtual proxy card has been successfully activated and is fully operational.\n\nHere are your secure card credentials:\n- Account Holder: ${order.accountHolder}\n- Card Brand: ${order.brand}\n- Card Number: ${newCardNumber}\n- Expiration: ${newExpiry}\n- CVV: ${newCVV}\n- Credit Limit: $${order.limit.toLocaleString()} USD / Month\n- Purchase Date: ${order.purchaseDate}\n\nPlease keep these card parameters completely private and secure.\n\nSincerely,\nNeoByte Bank Service Dispatch`;
+                                  const recipientName = getRecipientName(order);
+                                  const emailBody = `Dear ${recipientName},\n\nWe are pleased to inform you that your secure virtual proxy card has been successfully activated and is fully operational.\n\nHere are your secure card credentials:\n- Customer: ${recipientName}\n- Card Brand: ${order.brand}\n- Card Number: ${newCardNumber}\n- Expiration: ${newExpiry}\n- CVV: ${newCVV}\n- Credit Limit: $${order.limit.toLocaleString()} USD / Month\n- Purchase Date: ${order.purchaseDate}\n\nPlease keep these card parameters completely private and secure.\n\nSincerely,\nNeoByte Bank Service Dispatch`;
                                   navigator.clipboard.writeText(emailBody);
                                 }}
                                 className="px-4 py-2 bg-[#adff2f]/20 hover:bg-[#adff2f]/30 text-[#adff2f] font-sans font-bold text-xs uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
@@ -1047,6 +1084,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                             {isPending && (
                               <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 space-y-3">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                                  <div className="flex-1 space-y-1">
+                                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Reusable custom message templates</label>
+                                    <select
+                                      value={messageTemplateSelections[order.id] || ''}
+                                      onChange={(e) => {
+                                        const selected = e.target.value;
+                                        setMessageTemplateSelections(prev => ({ ...prev, [order.id]: selected }));
+                                        if (selected) {
+                                          setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultDispatchDraft(order)), message: selected } }));
+                                        }
+                                      }}
+                                      className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white text-xs font-sans"
+                                    >
+                                      <option value="">Choose a saved custom message</option>
+                                      {savedCustomMessages.map((template, index) => (
+                                        <option key={`${template}-${index}`} value={template}>{template.length > 60 ? `${template.slice(0, 57)}...` : template}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="flex-1 space-y-1">
+                                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Add a new reusable custom message</label>
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={newCustomMessage}
+                                        onChange={(e) => setNewCustomMessage(e.target.value)}
+                                        className="flex-1 p-2 bg-black border border-zinc-800 rounded-lg text-white text-xs font-sans"
+                                        placeholder="Save a reusable note"
+                                      />
+                                      <button
+                                        onClick={handleSaveCustomMessage}
+                                        className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer"
+                                      >
+                                        Save
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
                                 <div className="space-y-1">
                                   <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Custom delivery subject</label>
                                   <input
