@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PrepaidCard, CardBrand, PurchasedCard } from '../types';
-import { ShieldCheck, Plus, Trash2, Image, FileText, Check, AlertTriangle, Users, Sliders, Edit, ExternalLink, Mail, CheckSquare, CreditCard, HelpCircle, Phone, Clock } from 'lucide-react';
+import { ShieldCheck, Plus, Trash2, Image, FileText, Check, AlertTriangle, Users, Sliders, Edit, ExternalLink, Mail, CheckSquare, CreditCard, HelpCircle, Phone, Clock, MessageSquareText } from 'lucide-react';
 import { SupportContacts } from './CustomerSupport';
 
 import { SiteImagesConfig } from '../types';
@@ -237,6 +237,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newExpiry, setNewExpiry] = useState('');
   const [newCVV, setNewCVV] = useState('');
   const [dispatchDrafts, setDispatchDrafts] = useState<Record<string, { subject: string; message: string }>>({});
+  const [customMessageOrderId, setCustomMessageOrderId] = useState<string | null>(null);
   const [savedCustomMessages, setSavedCustomMessages] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('neobyte_saved_dispatch_messages');
@@ -269,6 +270,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return {
       subject: `Your NeoByte card is ready — ${order.name}`,
       message: `Hello ${recipientName},\n\nYour payment for ${order.name} has been received and your card delivery is ready for review.\n\nCard: ${order.name}\nPrice: $${amount}\nCustomer: ${recipientName}\n\nPlease keep these details secure.`,
+    };
+  };
+
+  const getDefaultCustomMessageDraft = (order: PurchasedCard) => {
+    const recipientName = getRecipientName(order);
+    return {
+      subject: `Quick update on your NeoByte order`,
+      message: `Hello ${recipientName},\n\nWe wanted to share a quick update about your recent order.\n\nPlease let us know if you need anything else.\n\nThank you,\nNeoByte Bank`,
     };
   };
 
@@ -353,7 +362,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleSendDispatch = async (order: PurchasedCard) => {
     const draft = dispatchDrafts[order.id] || getDefaultDispatchDraft(order);
-    setAlertMessage({ type: 'success', text: `Sending custom delivery message to ${order.ownerEmail || 'the customer'}...` });
+    setAlertMessage({ type: 'success', text: `Sending card details to ${order.ownerEmail || 'the customer'}...` });
     const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order, {
       subject: draft.subject,
       message: draft.message,
@@ -369,9 +378,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (onUpdatePurchasedCard) {
         onUpdatePurchasedCard(deliveredCard);
       }
-      setAlertMessage({ type: 'success', text: `Delivery email sent and card marked as delivered for ${order.ownerEmail || 'the customer'}.` });
+      setAlertMessage({ type: 'success', text: `Card details sent and order marked as delivered for ${order.ownerEmail || 'the customer'}.` });
     } else {
       setAlertMessage({ type: 'error', text: 'Delivery email failed. Please try again.' });
+    }
+  };
+
+  const handleSendCustomMessage = async (order: PurchasedCard) => {
+    const draft = dispatchDrafts[order.id] || getDefaultCustomMessageDraft(order);
+    setAlertMessage({ type: 'success', text: `Sending custom message to ${order.ownerEmail || 'the customer'}...` });
+    const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', order, {
+      subject: draft.subject,
+      message: draft.message,
+    });
+
+    if (success) {
+      setCustomMessageOrderId(null);
+      setAlertMessage({ type: 'success', text: `Custom message sent to ${order.ownerEmail || 'the customer'}.` });
+    } else {
+      setAlertMessage({ type: 'error', text: 'Custom message failed. Please try again.' });
     }
   };
 
@@ -813,6 +838,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         const isPending = true;
                         const isEditingThis = editingOrderId === order.id;
                         const draft = dispatchDrafts[order.id] || getDefaultDispatchDraft(order);
+                        const customDraft = dispatchDrafts[order.id] || getDefaultCustomMessageDraft(order);
 
                         return (
                           <div 
@@ -893,37 +919,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       {/* Editing Actions Block */}
                       <div className="mt-6 pt-6 border-t border-zinc-900">
                         {isEditingThis ? (
-                          <div className="space-y-4 bg-zinc-900/20 p-5 border border-zinc-850 rounded-xl p-4">
-                            <h4 className="text-white text-xs font-mono uppercase tracking-widest font-black text-[#adff2f]">
-                              ACTIVATE & ASSIGN VIRTUAL CREDIT DATA
-                            </h4>
-                            
+                          <div className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-white text-xs font-mono uppercase tracking-widest font-black text-[#adff2f]">
+                                Update delivery credentials
+                              </h4>
+                              <button
+                                onClick={() => setEditingOrderId(null)}
+                                className="text-[10px] uppercase text-zinc-400 hover:text-zinc-200"
+                              >
+                                Close
+                              </button>
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div className="space-y-1">
                                 <label className="block text-[10px] font-mono text-zinc-400 uppercase">Credit Card Number</label>
-                                <input 
-                                  type="text" 
-                                  value={newCardNumber} 
+                                <input
+                                  type="text"
+                                  value={newCardNumber}
                                   onChange={(e) => setNewCardNumber(e.target.value)}
                                   className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white font-mono text-xs focus:border-[#adff2f]/30"
                                 />
                               </div>
                               <div className="space-y-1">
                                 <label className="block text-[10px] font-mono text-zinc-400 uppercase">Expiration (MM/YY)</label>
-                                <input 
-                                  type="text" 
+                                <input
+                                  type="text"
                                   placeholder="12/30"
-                                  value={newExpiry} 
+                                  value={newExpiry}
                                   onChange={(e) => setNewExpiry(e.target.value)}
                                   className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white font-mono text-xs focus:border-[#adff2f]/30"
                                 />
                               </div>
                               <div className="space-y-1">
                                 <label className="block text-[10px] font-mono text-zinc-400 uppercase">CVV Code</label>
-                                <input 
-                                  type="text" 
+                                <input
+                                  type="text"
                                   maxLength={4}
-                                  value={newCVV} 
+                                  value={newCVV}
                                   onChange={(e) => setNewCVV(e.target.value)}
                                   className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white font-mono text-xs focus:border-[#adff2f]/30"
                                 />
@@ -941,10 +975,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   };
                                   const draft = dispatchDrafts[order.id] || getDefaultDispatchDraft(baseUpdatedCard);
                                   setEditingOrderId(null);
-                                  setAlertMessage({
-                                    type: 'success',
-                                    text: `Sending custom delivery email to ${order.ownerEmail}...`
-                                  });
+                                  setAlertMessage({ type: 'success', text: `Sending card details to ${order.ownerEmail}...` });
 
                                   const success = await sendEmailJsEmail(order.ownerEmail || 'guest@neobyte.bank', baseUpdatedCard, {
                                     subject: draft.subject,
@@ -960,78 +991,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     if (onUpdatePurchasedCard) {
                                       onUpdatePurchasedCard(dispatchedCard);
                                     }
-                                    setAlertMessage({
-                                      type: 'success',
-                                      text: `Delivery email sent and card marked as delivered for ${order.ownerEmail}.`
-                                    });
+                                    setAlertMessage({ type: 'success', text: `Card details sent and order marked as delivered for ${order.ownerEmail}.` });
                                   } else {
-                                    setAlertMessage({
-                                      type: 'error',
-                                      text: 'Email transmission failed. Please try again.'
-                                    });
+                                    setAlertMessage({ type: 'error', text: 'Email transmission failed. Please try again.' });
                                   }
                                 }}
                                 className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-sans font-extrabold text-xs uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
                               >
-                                  <Mail className="w-4 h-4 text-black" />
-                                  <span>Send Custom Delivery</span>
-                                </button>
-
-                              <button
-                                onClick={() => {
-                                  const updatedCard: PurchasedCard = {
-                                    ...order,
-                                    cardNumber: newCardNumber.trim() || order.cardNumber,
-                                    expiry: newExpiry.trim() || order.expiry,
-                                    cvv: newCVV.trim() || order.cvv,
-                                  };
-                                  if (onUpdatePurchasedCard) {
-                                    onUpdatePurchasedCard(updatedCard);
-                                  }
-                                  setEditingOrderId(null);
-                                  setAlertMessage({
-                                    type: 'success',
-                                    text: `Order details updated. You can send delivery manually from the pending section.`
-                                  });
-
-                                  const recipientName = getRecipientName(order);
-                                  const emailBody = `Dear ${recipientName},\n\nWe are pleased to inform you that your secure virtual proxy card has been successfully activated and is fully operational.\n\nHere are your secure card credentials:\n- Customer: ${recipientName}\n- Card Brand: ${order.brand}\n- Card Number: ${newCardNumber}\n- Expiration: ${newExpiry}\n- CVV: ${newCVV}\n- Credit Limit: $${order.limit.toLocaleString()} USD / Month\n- Purchase Date: ${order.purchaseDate}\n\nPlease keep these card parameters completely private and secure.\n\nSincerely,\nNeoByte Bank Service Dispatch`;
-                                  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(order.ownerEmail || 'manmagic@yahoo.com')}&su=${encodeURIComponent('Your Live NeoByte Proxy Credit is Active!')}&body=${encodeURIComponent(emailBody)}`;
-                                  window.open(gmailUrl, '_blank');
-                                }}
-                                className="px-4 py-2 bg-lime-500 hover:bg-lime-400 text-black font-sans font-bold text-xs uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-                              >
-                                <Mail className="w-4 h-4" />
-                                <span>Save & Open Gmail</span>
+                                <Mail className="w-4 h-4 text-black" />
+                                <span>Deliver Card Details</span>
                               </button>
-
-                              <button
-                                onClick={() => {
-                                  const updatedCard: PurchasedCard = {
-                                    ...order,
-                                    cardNumber: newCardNumber.trim() || order.cardNumber,
-                                    expiry: newExpiry.trim() || order.expiry,
-                                    cvv: newCVV.trim() || order.cvv,
-                                  };
-                                  if (onUpdatePurchasedCard) {
-                                    onUpdatePurchasedCard(updatedCard);
-                                  }
-                                  setEditingOrderId(null);
-                                  setAlertMessage({
-                                    type: 'success',
-                                    text: `Order updated and parameters copied to clipboard!`
-                                  });
-
-                                  const recipientName = getRecipientName(order);
-                                  const emailBody = `Dear ${recipientName},\n\nWe are pleased to inform you that your secure virtual proxy card has been successfully activated and is fully operational.\n\nHere are your secure card credentials:\n- Customer: ${recipientName}\n- Card Brand: ${order.brand}\n- Card Number: ${newCardNumber}\n- Expiration: ${newExpiry}\n- CVV: ${newCVV}\n- Credit Limit: $${order.limit.toLocaleString()} USD / Month\n- Purchase Date: ${order.purchaseDate}\n\nPlease keep these card parameters completely private and secure.\n\nSincerely,\nNeoByte Bank Service Dispatch`;
-                                  navigator.clipboard.writeText(emailBody);
-                                }}
-                                className="px-4 py-2 bg-[#adff2f]/20 hover:bg-[#adff2f]/30 text-[#adff2f] font-sans font-bold text-xs uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-                              >
-                                <CheckSquare className="w-4 h-4" />
-                                <span>Save & Copy Parameters</span>
-                              </button>
-
                               <button
                                 onClick={() => setEditingOrderId(null)}
                                 className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-sans text-xs uppercase rounded-lg transition-all cursor-pointer"
@@ -1042,31 +1011,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </div>
                         ) : (
                           <div className="space-y-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
-                              <div className="space-y-0.5 text-left font-sans">
-                                <span className="text-zinc-[550] uppercase text-zinc-500 text-[10px]">Secure proxy assigned details</span>
-                                <span className="text-white block font-bold font-mono">
-                                  {order.cardNumber.substring(0,4)} **** **** {order.cardNumber.substring(12,16)} (Exp: {order.expiry} CVV: {order.cvv})
-                                </span>
-                              </div>
-
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                               <div className="flex flex-wrap items-center gap-2">
-                                {isPending ? (
-                                  <button
-                                    onClick={() => handleSendDispatch(order)}
-                                    className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 text-teal-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-800"
-                                    title="Send custom delivery email"
-                                  >
-                                    <Mail className="w-3.5 h-3.5" />
-                                    <span>Send Delivery</span>
-                                  </button>
-                                ) : (
-                                  <div className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1.5 opacity-80 cursor-not-allowed">
-                                    <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
-                                    <span>Delivered</span>
-                                  </div>
-                                )}
-
+                                <button
+                                  onClick={() => handleSendDispatch(order)}
+                                  className="px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-black text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+                                >
+                                  <Mail className="w-3.5 h-3.5" />
+                                  <span>Deliver Card Details</span>
+                                </button>
+                                <button
+                                  onClick={() => setCustomMessageOrderId(prev => prev === order.id ? null : order.id)}
+                                  className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-800"
+                                >
+                                  <MessageSquareText className="w-3.5 h-3.5 text-teal-400" />
+                                  <span>Custom Message</span>
+                                </button>
                                 <button
                                   onClick={() => {
                                     setEditingOrderId(order.id);
@@ -1077,42 +1037,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   className="px-3 py-1.5 bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-300 font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 text-[10px]"
                                 >
                                   <Edit className="w-3.5 h-3.5 text-lime-400" />
-                                  <span>Edit Parameters</span>
+                                  <span>Edit Credentials</span>
                                 </button>
                               </div>
+                              <div className="text-[11px] text-zinc-500 font-mono">Customer: {getRecipientName(order)}</div>
                             </div>
 
-                            {isPending && (
-                              <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 space-y-3">
+                            {customMessageOrderId === order.id && (
+                              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 space-y-3">
                                 <div className="flex flex-col gap-3 md:flex-row md:items-end">
                                   <div className="flex-1 space-y-1">
-                                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Reusable custom message templates</label>
+                                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Saved templates</label>
                                     <select
                                       value={messageTemplateSelections[order.id] || ''}
                                       onChange={(e) => {
                                         const selected = e.target.value;
                                         setMessageTemplateSelections(prev => ({ ...prev, [order.id]: selected }));
                                         if (selected) {
-                                          setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultDispatchDraft(order)), message: selected } }));
+                                          setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultCustomMessageDraft(order)), message: selected } }));
                                         }
                                       }}
                                       className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white text-xs font-sans"
                                     >
-                                      <option value="">Choose a saved custom message</option>
+                                      <option value="">Choose a saved template</option>
                                       {savedCustomMessages.map((template, index) => (
                                         <option key={`${template}-${index}`} value={template}>{template.length > 60 ? `${template.slice(0, 57)}...` : template}</option>
                                       ))}
                                     </select>
                                   </div>
                                   <div className="flex-1 space-y-1">
-                                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Add a new reusable custom message</label>
+                                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Save a reusable message</label>
                                     <div className="flex gap-2">
                                       <input
                                         type="text"
                                         value={newCustomMessage}
                                         onChange={(e) => setNewCustomMessage(e.target.value)}
                                         className="flex-1 p-2 bg-black border border-zinc-800 rounded-lg text-white text-xs font-sans"
-                                        placeholder="Save a reusable note"
+                                        placeholder="Type a reusable note"
                                       />
                                       <button
                                         onClick={handleSaveCustomMessage}
@@ -1124,22 +1085,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   </div>
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Custom delivery subject</label>
+                                  <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Subject</label>
                                   <input
                                     type="text"
-                                    value={draft.subject}
-                                    onChange={(e) => setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultDispatchDraft(order)), subject: e.target.value } }))}
+                                    value={customDraft.subject}
+                                    onChange={(e) => setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultCustomMessageDraft(order)), subject: e.target.value } }))}
                                     className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white text-xs font-sans"
                                   />
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Custom delivery message</label>
+                                  <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Message</label>
                                   <textarea
                                     rows={3}
-                                    value={draft.message}
-                                    onChange={(e) => setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultDispatchDraft(order)), message: e.target.value } }))}
+                                    value={customDraft.message}
+                                    onChange={(e) => setDispatchDrafts(prev => ({ ...prev, [order.id]: { ...(prev[order.id] || getDefaultCustomMessageDraft(order)), message: e.target.value } }))}
                                     className="w-full p-2 bg-black border border-zinc-800 rounded-lg text-white text-xs font-sans"
                                   />
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    onClick={() => setCustomMessageOrderId(null)}
+                                    className="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => handleSendCustomMessage(order)}
+                                    className="px-3 py-2 bg-teal-500 hover:bg-teal-400 text-black text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer"
+                                  >
+                                    Send Message
+                                  </button>
                                 </div>
                               </div>
                             )}

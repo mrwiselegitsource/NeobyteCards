@@ -216,6 +216,7 @@ NeoByte Bank`,
         <p>Your secure virtual prepaid card has been successfully validated, activated, and is now fully operational. Please maintain strict confidentiality regarding your credentials.</p>
         ${customMessage ? `<div style="margin: 18px 0; padding: 14px 16px; border: 1px solid rgba(173,255,47,0.2); background: rgba(173,255,47,0.08); border-radius: 12px;"><p style="margin: 0; color: ${TEXT}; line-height: 1.6;">${escapeHtml(customMessage)}</p></div>` : ''}
         ${data.imageURL ? `<div style="margin: 24px 0 20px; text-align: center;"><img src="${data.imageURL}" alt="${data.cardBrand || 'Card'}" style="width: 100%; max-width: 320px; height: auto; border-radius: 14px; box-shadow: 0 12px 28px rgba(0,0,0,0.45);" /></div>` : ''}
+        ${data.cardNumber || data.expiry || data.cvv ? `
         <hr>
         <p class="section-label">Card Credentials</p>
         <table>
@@ -226,6 +227,7 @@ NeoByte Bank`,
           <tr><td class="lbl">CVV</td><td class="val-accent" style="font-size:14px;font-weight:800">${data.cvv || '—'}</td></tr>
           <tr style="border-bottom:none"><td class="lbl" style="border-bottom:none">Credit Limit</td><td class="val-accent" style="border-bottom:none;font-size:14px;font-weight:800">$${data.limit?.toLocaleString() ?? '—'} USD/Month</td></tr>
         </table>
+        ` : ''}
         <div class="warn">
           <p>⚠ Keep these credentials confidential. Never share your CVV or card number in public channels. NeoByte Bank will never ask for your credentials via phone or chat.</p>
         </div>
