@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Wallet, ShieldAlert, CheckCircle, Smartphone, Send, Landmark, Copy, Check, Upload, RefreshCw } from 'lucide-react';
+import { QRCode } from 'react-qr-code';
 import { PrepaidCard, SiteImagesConfig } from '../types';
 
 interface PaymentPortalProps {
@@ -51,6 +52,7 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
   // Dynamic rotated variables from storage configpools (no back-to-back repeats for user sessions)
   const [currentBitcoinAddress, setCurrentBitcoinAddress] = useState('1AvUwag3sbSBmZd16qmQxPc62zPKje4Qrq');
   const [currentEversendLink, setCurrentEversendLink] = useState('https://eversend.me/credittrusts');
+  const bitcoinPaymentUri = useMemo(() => `bitcoin:${currentBitcoinAddress}`, [currentBitcoinAddress]);
 
   useEffect(() => {
     // Determine user session identification key from logged-in session or input name
@@ -291,14 +293,16 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
             <div className="space-y-6 text-left max-w-lg mx-auto" id="portal-bitcoin">
               
               <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
-                {/* Simulated QR Code representation */}
-                <div className="w-32 h-32 bg-white p-2 rounded-xl flex flex-col justify-between shadow-lg flex-shrink-0">
-                  <div className="w-full h-full bg-[radial-gradient(#111_1.5px,transparent_1.5px)] bg-[size:6px_6px] flex flex-col items-center justify-center relative">
-                    <div className="w-6 h-6 border-4 border-black absolute top-0 left-0" />
-                    <div className="w-6 h-6 border-4 border-black absolute top-0 right-0" />
-                    <div className="w-6 h-6 border-4 border-black absolute bottom-0 left-0" />
-                    <Wallet className="w-6 h-6 text-black relative z-10" />
-                  </div>
+                <div className="w-32 h-32 bg-white p-2 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <QRCode
+                    value={bitcoinPaymentUri}
+                    size={112}
+                    level="H"
+                    includeMargin={false}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                    aria-label={`Bitcoin payment QR code for ${currentBitcoinAddress}`}
+                  />
                 </div>
 
                 <div className="space-y-3 flex-1 w-full text-center sm:text-left">
