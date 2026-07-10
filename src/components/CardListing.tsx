@@ -61,58 +61,6 @@ export const CardListing: React.FC<CardListingProps> = ({ cards, onSelectCard })
           </div>
         </div>
 
-        {/* Search, Filter, Sort controls */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-          
-          {/* Search bar input */}
-          <div className="lg:col-span-4 relative">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-500">
-              <Search className="w-4 h-4" />
-            </span>
-            <input
-              type="text"
-              placeholder="Search card model, type or features..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-xs bg-zinc-950/80 border border-zinc-800 focus:border-[#adff2f]/30 pl-10 pr-4 py-3 rounded-xl text-white outline-none focus:ring-1 focus:ring-[#adff2f]/10 font-sans transition-all placeholder:text-zinc-600"
-            />
-          </div>
-
-          {/* Brand Filter Pills */}
-          <div className="lg:col-span-5 flex flex-wrap items-center gap-1.5 overflow-x-auto py-1scrollbar-none">
-            {brands.map(brand => (
-              <button
-                key={brand}
-                onClick={() => setSelectedBrand(brand)}
-                className={`px-3 py-2 text-[10px] sm:text-xs font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer whitespace-nowrap ${
-                  selectedBrand === brand
-                    ? 'bg-[#122a12] text-[#adff2f] border-[#adff2f]/30'
-                    : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-zinc-200 hover:border-zinc-800'
-                }`}
-              >
-                {brand}
-              </button>
-            ))}
-          </div>
-
-          {/* Sorter selector */}
-          <div className="lg:col-span-3 flex items-center space-x-2 bg-zinc-950/80 border border-zinc-800 p-2 rounded-xl">
-            <ArrowUpDown className="w-4 h-4 text-zinc-600" />
-            <select
-              value={sortBy}
-              aria-label="Sort cards list"
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full text-xs bg-transparent text-zinc-300 border-none outline-none font-mono cursor-pointer font-bold uppercase focus:ring-0"
-            >
-              <option className="bg-zinc-950 text-white" value="lowest-price">Price: Low to High</option>
-              <option className="bg-zinc-950 text-white" value="highest-price">Price: High to Low</option>
-              <option className="bg-zinc-950 text-white" value="highest-limit">Limit Capacity</option>
-              <option className="bg-zinc-950 text-white" value="title">Card Model (A-Z)</option>
-            </select>
-          </div>
-
-        </div>
-
         {/* Results grid */}
         {filteredCards.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-10" id="catalog-grid">

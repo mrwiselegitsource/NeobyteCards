@@ -940,6 +940,8 @@ export default function App() {
             {viewState === 'detail' && selectedCard && (
               <CardDetail
                 card={selectedCard}
+                allCards={cards}
+                onSelectCard={(c) => setSelectedCard(c)}
                 loggedInName={user.isLoggedIn ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : undefined}
                 onBackToStore={() => setViewState('catalog')}
                 onProceedToCheckout={(customizedCard) => {

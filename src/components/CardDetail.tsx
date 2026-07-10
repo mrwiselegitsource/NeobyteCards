@@ -5,6 +5,8 @@ import { PrepaidCard } from '../types';
 interface CardDetailProps {
   card: PrepaidCard;
   loggedInName?: string;
+  allCards?: PrepaidCard[];
+  onSelectCard?: (card: PrepaidCard) => void;
   onBackToStore: () => void;
   onProceedToCheckout: (customizedCard: PrepaidCard) => void;
 }
@@ -12,6 +14,8 @@ interface CardDetailProps {
 export const CardDetail: React.FC<CardDetailProps> = ({
   card,
   loggedInName,
+  allCards = [],
+  onSelectCard,
   onBackToStore,
   onProceedToCheckout
 }) => {
@@ -38,6 +42,18 @@ export const CardDetail: React.FC<CardDetailProps> = ({
       setCalculatedPrice(card.price);
     }
   }, [customLimit, card]);
+
+  // Compute up to 8 related cards (same brand, excluding current)
+  const relatedCards = React.useMemo(() => {
+    if (!allCards || allCards.length === 0) return [];
+    let related = allCards.filter(c => c.id !== card.id && c.brand === card.brand);
+    // If not enough related by brand, pad with other cards
+    if (related.length < 8) {
+      const others = allCards.filter(c => c.id !== card.id && c.brand !== card.brand);
+      related = [...related, ...others];
+    }
+    return related.slice(0, 8);
+  }, [allCards, card]);
 
   const handleBuy = () => {
     const customizedCard: PrepaidCard = {
@@ -205,6 +221,58 @@ export const CardDetail: React.FC<CardDetailProps> = ({
           </div>
 
         </div>
+
+        {/* Related Cards Section */}
+        {relatedCards.length > 0 && (
+          <div className="mt-16 pt-12 border-t border-zinc-900">
+            <h3 className="text-sm font-mono font-bold tracking-widest text-[#adff2f] uppercase mb-8">Related Cards</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {relatedCards.map((rCard) => (
+                <div
+                  key={rCard.id}
+                  onClick={() => onSelectCard && onSelectCard(rCard)}
+                  className="group flex flex-col items-center bg-transparent border-none cursor-pointer relative"
+                >
+                  <div className="w-full aspect-[1.58/1] rounded-xl overflow-hidden relative shadow-lg group-hover:scale-105 transition-transform duration-300">
+                    <div
+                      className={`w-full h-full p-3 flex flex-col justify-between relative ${
+                        rCard.imageURL 
+                          ? 'bg-transparent' 
+                          : 'bg-gradient-to-br ' + rCard.color.split(' ').filter(c => !c.startsWith('hover:')).join(' ')
+                      }`}
+                      style={rCard.imageURL ? { backgroundImage: `url(${rCard.imageURL})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+                    >
+                      {rCard.isUploadedImage && rCard.imageURL ? (
+                        <div className="absolute inset-0 bg-transparent z-10" />
+                      ) : (
+                        <>
+                          {rCard.imageURL && <div className="absolute inset-0 bg-black/55 -z-0" />}
+                          <div className="flex items-start justify-between z-10 relative">
+                            <span className="text-[6px] sm:text-[7px] font-mono tracking-widest text-[#adff2f] font-bold">NEOBYTE</span>
+                            <span className="text-[8px] sm:text-[9px] text-white font-mono font-extrabold">{rCard.brand}</span>
+                          </div>
+                          <div className="w-6 h-5 rounded bg-gradient-to-r from-yellow-500/90 to-yellow-600/90 border border-yellow-400/40 p-0.5 z-10 relative">
+                            <div className="w-full h-full border border-yellow-800/20" />
+                          </div>
+                          <div className="mt-auto z-10 relative space-y-1">
+                            <div className="font-mono text-[9px] sm:text-[10px] text-white/90 tracking-[0.1em]">{rCard.cardNumber || '5574 **** **** 7378'}</div>
+                            <div className="flex justify-between items-end">
+                              <span className="font-mono text-[6px] sm:text-[7px] text-white/70 uppercase tracking-wider block">{rCard.accountHolder}</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 text-center w-full">
+                    <h4 className="text-white font-sans text-[10px] sm:text-xs font-bold leading-tight group-hover:text-[#adff2f] transition-colors line-clamp-1">{rCard.name}</h4>
+                    <span className="text-zinc-500 font-mono text-[9px] sm:text-[10px] block mt-0.5">${rCard.price.toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
