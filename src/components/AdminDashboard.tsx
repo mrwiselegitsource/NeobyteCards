@@ -58,6 +58,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [price, setPrice] = useState<string>('49.99');
   const [limit, setLimit] = useState<string>('5000');
   const [accountHolder, setAccountHolder] = useState('AUTHORIZATION NODE');
+  const [customCardNumber, setCustomCardNumber] = useState('');
   const [imageURL, setImageURL] = useState('');
   const [fileName, setFileName] = useState('');
   const [isUploadedImage, setIsUploadedImage] = useState(false);
@@ -522,6 +523,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setPrice(card.price.toString());
     setLimit(card.limit.toString());
     setAccountHolder(card.accountHolder || 'AUTHORIZATION NODE');
+    setCustomCardNumber(card.cardNumber || '');
     setImageURL(card.imageURL || '');
     setFileName(card.isUploadedImage ? 'Uploaded PNG File' : '');
     setIsUploadedImage(!!card.isUploadedImage);
@@ -625,6 +627,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setName('');
     setPrice('49.99');
     setLimit('5000');
+    setAccountHolder('AUTHORIZATION NODE');
+    setCustomCardNumber('');
     setImageURL('');
     setFileName('');
     setIsUploadedImage(false);
@@ -1344,13 +1348,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   />
                 </div>
 
+                {/* Custom Card Number Input */}
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">Display Card Number (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 5574 **** **** 7378"
+                    value={customCardNumber}
+                    onChange={(e) => setCustomCardNumber(e.target.value)}
+                    className="w-full text-xs bg-zinc-900 border border-zinc-800 focus:border-[#adff2f]/30 p-2.5 rounded-xl text-white outline-none focus:ring-1 focus:ring-[#adff2f]/10 font-mono"
+                  />
+                  <p className="text-[8px] text-zinc-500 font-mono">Leave blank to auto-generate based on brand.</p>
+                </div>
+
               </div>
 
               {/* Image Input Selection Block */}
               <div className="space-y-3 pb-2">
                 <div className="flex justify-between items-center">
                   <label className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">
-                    Card Graphic / PNG Image
+                    Card Graphic / Image Upload
                   </label>
                   <span className="text-[8px] font-mono text-[#adff2f] uppercase font-bold">Displays "in place of the card"</span>
                 </div>
@@ -1379,7 +1396,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     />
                     <Image className={`w-5 h-5 mb-1.5 ${isUploadedImage ? 'text-[#adff2f]' : 'text-zinc-500'}`} />
                     <span className="text-[10px] font-sans font-extrabold text-white block">
-                      {fileName ? 'PNG Uploaded' : 'Drag & Drop PNG card'}
+                      {fileName ? 'Image Uploaded' : 'Drag & Drop Image (PNG, JPG, AVIF)'}
                     </span>
                     <span className="text-[8px] text-zinc-500 font-mono mt-0.5 truncate max-w-full px-2">
                       {fileName ? fileName : 'or click to browse files'}
@@ -1391,7 +1408,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="space-y-0.5">
                       <span className="text-[9px] font-mono text-zinc-400 block font-bold uppercase">Or Web Image URL</span>
                       <p className="text-[8px] text-zinc-600 leading-normal font-sans">
-                        Type or paste a PNG card URL from any external web repository:
+                        Type or paste a Card image URL (any format) from any external web repository:
                       </p>
                     </div>
                     <input
@@ -1422,7 +1439,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   />
                   <div className="text-left select-none">
                     <label htmlFor="toggle-overlay-suppress" className="block text-[10px] font-sans font-extrabold text-white uppercase cursor-pointer hover:text-[#adff2f] transition-colors">
-                      Full Graphic PNG Mode (Hide standard text, chip & logo overlays)
+                      Full Graphic Image Mode (Hide standard text, chip & logo overlays)
                     </label>
                     <p className="text-[8px] text-zinc-500 font-mono mt-0.5">
                       Enable this to display your PNG image purely as-designed. Disabling this synthesizes default credit card number, chip, and bank overlays on top of your background.
