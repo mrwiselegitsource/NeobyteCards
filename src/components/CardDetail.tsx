@@ -26,6 +26,8 @@ export const CardDetail: React.FC<CardDetailProps> = ({
   useEffect(() => {
     setCustomLimit(card.limit);
     setCalculatedPrice(card.price);
+    // Scroll back to the top of the page so the user sees the new card details
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [card]);
 
   // Dynamically calculate price based on customized credit limits
