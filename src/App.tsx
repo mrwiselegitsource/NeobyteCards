@@ -384,7 +384,7 @@ export default function App() {
     checkAndDispatchCards();
 
     return () => clearInterval(interval);
-  }, [allPurchasedCards]);
+  }, [allPurchasedCards, pendingCheckouts]);
 
   // Legal Modal trigger
   const [legalModal, setLegalModal] = useState<{
