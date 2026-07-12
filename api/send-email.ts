@@ -238,7 +238,7 @@ NeoByte Bank`,
 
 function buildAbandonedCartEmail(to: string, data: EmailPayload['data']) {
   const name = data.name || data.username || 'Client';
-  const siteUrl = data.siteUrl || 'https://neobytebank.replit.app';
+  const siteUrl = data.siteUrl || 'https://neobytebankcards.vercel.app';
   const cardName = data.cardName || 'Virtual Credit Card';
   
   return {
