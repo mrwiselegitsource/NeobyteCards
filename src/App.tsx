@@ -643,19 +643,23 @@ export default function App() {
       setSelectedCard(updatedCard);
 
       // Track as a pending checkout for abandoned cart logic
-      setPendingCheckouts(prev => [
-        ...prev,
-        {
-          id: `checkout-${Date.now()}`,
-          cardId: updatedCard.id,
-          cardName: updatedCard.name,
-          email: details.email,
-          name: `${details.firstName} ${details.lastName}`,
-          timestamp: Date.now(),
-          price: updatedCard.price,
-          notified: false
-        }
-      ]);
+      setPendingCheckouts(prev => {
+        // Remove any existing pending checkouts for this email to prevent duplicate emails
+        const filtered = prev.filter(p => p.email !== details.email);
+        return [
+          ...filtered,
+          {
+            id: `checkout-${Date.now()}`,
+            cardId: updatedCard.id,
+            cardName: updatedCard.name,
+            email: details.email,
+            name: `${details.firstName} ${details.lastName}`,
+            timestamp: Date.now(),
+            price: updatedCard.price,
+            notified: false
+          }
+        ];
+      });
     }
     
     setViewState('payment_portal');
