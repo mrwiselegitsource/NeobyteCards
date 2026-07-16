@@ -69,10 +69,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const fetchGitHubImages = async () => {
     setIsFetchingImages(true);
     try {
-      const res = await fetch('https://api.github.com/repos/mrwiselegitsource/Cards/contents/');
+      const res = await fetch('/api/list-blobs');
       const data = await res.json();
       if (Array.isArray(data)) {
-        const images = data.filter((file: any) => file.name.match(/\.(png|jpe?g|avif|webp|svg)$/i));
+        // filter images (Vercel blob url usually ends with extensions, but sometimes without. Let's just use everything or filter by basic extensions)
+        const images = data.filter((file: any) => file.pathname.match(/\.(png|jpe?g|avif|webp|svg)$/i));
         setGithubImages(images);
       }
     } catch(err) {
@@ -1439,7 +1440,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         }}
                         className="text-[9px] font-mono bg-zinc-800 hover:bg-[#adff2f] hover:text-black transition-colors text-zinc-300 px-3 py-1 rounded-md cursor-pointer"
                       >
-                        {showGallery ? 'Hide Gallery' : 'Open Repo Gallery'}
+                        {showGallery ? 'Hide Gallery' : 'Open Vercel Storage'}
                       </button>
                     </div>
                     <input
@@ -1460,28 +1461,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {showGallery && (
                       <div className="mt-2 bg-black border border-zinc-800 rounded-lg p-2 max-h-60 overflow-y-auto">
                         {isFetchingImages ? (
-                          <div className="text-[10px] text-zinc-500 text-center py-4">Loading from GitHub mrwiselegitsource/Cards...</div>
+                          <div className="text-[10px] text-zinc-500 text-center py-4">Loading from Vercel Blob Storage...</div>
                         ) : githubImages.length > 0 ? (
                           <div className="grid grid-cols-4 gap-2">
                             {githubImages.map((img: any) => (
                               <div
-                                key={img.sha}
+                                key={img.url}
                                 onClick={() => {
-                                  setImageURL(img.download_url);
+                                  setImageURL(img.url);
                                   setIsUploadedImage(true);
                                   setFileName('');
                                 }}
                                 className="cursor-pointer border border-transparent hover:border-[#adff2f] rounded overflow-hidden aspect-[1.58/1] relative group bg-zinc-900"
                               >
-                                <img src={img.download_url} alt={img.name} className="w-full h-full object-cover" />
+                                <img src={img.url} alt={img.pathname} className="w-full h-full object-cover" />
                                 <div className="absolute inset-x-0 bottom-0 bg-black/80 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <span className="text-[8px] text-white truncate px-1">{img.name}</span>
+                                  <span className="text-[8px] text-white truncate px-1">{img.pathname.split('/').pop()}</span>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="text-[10px] text-zinc-500 text-center py-4">No images found in mrwiselegitsource/Cards</div>
+                          <div className="text-[10px] text-zinc-500 text-center py-4">No images found in Vercel Blob Storage</div>
                         )}
                       </div>
                     )}
