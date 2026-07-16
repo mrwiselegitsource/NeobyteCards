@@ -1412,8 +1412,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </p>
                     </div>
                     <input
-                      type="url"
-                      placeholder="e.g. https://domain.com/card_graphic.png"
+                      type="text"
+                      placeholder="e.g. https://domain.com/card.png OR /cards/image.png"
                       value={imageURL}
                       onChange={(e) => {
                         setImageURL(e.target.value);
