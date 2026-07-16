@@ -62,26 +62,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [imageURL, setImageURL] = useState('');
   const [fileName, setFileName] = useState('');
   const [isUploadedImage, setIsUploadedImage] = useState(false);
-  const [githubImages, setGithubImages] = useState<any[]>([]);
-  const [isFetchingImages, setIsFetchingImages] = useState(false);
-  const [showGallery, setShowGallery] = useState(false);
-
-  const fetchGitHubImages = async () => {
-    setIsFetchingImages(true);
-    try {
-      const res = await fetch('/api/list-blobs');
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        // filter images (Vercel blob url usually ends with extensions, but sometimes without. Let's just use everything or filter by basic extensions)
-        const images = data.filter((file: any) => file.pathname.match(/\.(png|jpe?g|avif|webp|svg)$/i));
-        setGithubImages(images);
-      }
-    } catch(err) {
-      console.error(err);
-    }
-    setIsFetchingImages(false);
-  };
-
   const [isDragging, setIsDragging] = useState(false);
   const [description, setDescription] = useState('');
   const [customTags, setCustomTags] = useState('New, Admin Addition');
@@ -1425,27 +1405,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   {/* External URL alternative */}
                   <div className="flex flex-col justify-between p-4 bg-zinc-900/20 border border-zinc-850 rounded-xl space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] font-mono text-zinc-400 block font-bold uppercase">Or Web Image URL</span>
-                        <p className="text-[8px] text-zinc-600 leading-normal font-sans">
-                          Type or paste a Card image URL (any format) from any external web repository:
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowGallery(!showGallery);
-                          if (!githubImages.length && !showGallery) fetchGitHubImages();
-                        }}
-                        className="text-[9px] font-mono bg-zinc-800 hover:bg-[#adff2f] hover:text-black transition-colors text-zinc-300 px-3 py-1 rounded-md cursor-pointer"
-                      >
-                        {showGallery ? 'Hide Gallery' : 'Open Vercel Storage'}
-                      </button>
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] font-mono text-zinc-400 block font-bold uppercase">Or Web Image URL</span>
+                      <p className="text-[8px] text-zinc-600 leading-normal font-sans">
+                        Type or paste a Card image URL (any format) from any external web repository:
+                      </p>
                     </div>
                     <input
-                      type="text"
-                      placeholder="e.g. https://domain.com/card.png OR /cards/image.png"
+                      type="url"
+                      placeholder="e.g. https://domain.com/card_graphic.png"
                       value={imageURL}
                       onChange={(e) => {
                         setImageURL(e.target.value);
@@ -1457,35 +1425,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       }}
                       className="w-full text-[10px] bg-zinc-950 border border-zinc-850 focus:border-[#adff2f]/30 p-2.5 rounded-lg text-white outline-none font-mono placeholder:text-zinc-700 text-left"
                     />
-
-                    {showGallery && (
-                      <div className="mt-2 bg-black border border-zinc-800 rounded-lg p-2 max-h-60 overflow-y-auto">
-                        {isFetchingImages ? (
-                          <div className="text-[10px] text-zinc-500 text-center py-4">Loading from Vercel Blob Storage...</div>
-                        ) : githubImages.length > 0 ? (
-                          <div className="grid grid-cols-4 gap-2">
-                            {githubImages.map((img: any) => (
-                              <div
-                                key={img.url}
-                                onClick={() => {
-                                  setImageURL(img.url);
-                                  setIsUploadedImage(true);
-                                  setFileName('');
-                                }}
-                                className="cursor-pointer border border-transparent hover:border-[#adff2f] rounded overflow-hidden aspect-[1.58/1] relative group bg-zinc-900"
-                              >
-                                <img src={img.url} alt={img.pathname} className="w-full h-full object-cover" />
-                                <div className="absolute inset-x-0 bottom-0 bg-black/80 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <span className="text-[8px] text-white truncate px-1">{img.pathname.split('/').pop()}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-[10px] text-zinc-500 text-center py-4">No images found in Vercel Blob Storage</div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
 
