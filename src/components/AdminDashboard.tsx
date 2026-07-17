@@ -2589,9 +2589,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         alert(`Successfully imported ${count} cards!`);
                         setImportString('');
                         // The onSnapshot listener in App.tsx will automatically refresh the UI
-                      } catch (err) {
+                      } catch (err: any) {
                         console.error("Import failed", err);
-                        alert("Invalid code format! Ensure you copied it exactly.");
+                        if (err.message && err.message.includes('permission')) {
+                          alert("Firebase Error: You don't have permission to write to this database. Please check your Firestore Security Rules!");
+                        } else if (err.message && err.message.includes('JSON')) {
+                          alert("Invalid code format! Ensure you copied it exactly without missing brackets.");
+                        } else {
+                          alert("Import failed: " + (err.message || "Unknown error"));
+                        }
                       }
                       setIsImporting(false);
                     }}
