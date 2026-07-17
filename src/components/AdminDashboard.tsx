@@ -69,7 +69,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [address, setAddress] = useState('733 Bank Road Corporate HQ');
 
   // Sub-tab selection state
-  const [activeSubTab, setActiveSubTab] = useState<'cards' | 'gateways' | 'orders' | 'active_cards' | 'support_config' | 'images_config'>('orders');
+  const [activeSubTab, setActiveSubTab] = useState<'cards' | 'gateways' | 'orders' | 'active_cards' | 'support_config' | 'images_config' | 'database_clone'>('orders');
 
   // Support contacts configuration state
   const [supportEmail, setSupportEmail] = useState(supportContacts?.email || 'support@neobytebank.com');
@@ -93,6 +93,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminPaymentMaskLogo, setAdminPaymentMaskLogo] = useState(siteImages?.paymentMaskLogo || '');
   const [adminPaymentMaskName, setAdminPaymentMaskName] = useState(siteImages?.paymentMaskName || '');
   const [adminSeoPreviewImage, setAdminSeoPreviewImage] = useState(siteImages?.seoPreviewImage || '');
+
+  // Database Clone State
+  const [importString, setImportString] = useState('');
+  const [exportString, setExportString] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   React.useEffect(() => {
     if (siteImages) {
@@ -757,6 +762,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <CreditCard className="w-3.5 h-3.5" />
             <span>Active Cards Database ({purchasedCards.filter(c => c.status === 'active').length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('database_clone')}
+            className={`px-5 py-3 border-b-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeSubTab === 'database_clone'
+                ? 'border-[#adff2f] text-[#adff2f] font-black'
+                : 'border-transparent text-zinc-500 hover:text-zinc-350'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Database Clone</span>
           </button>
         </div>
 
@@ -2487,8 +2504,106 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             </div>
           </div>
-        ) : null}
+        ) : activeSubTab === 'database_clone' ? (
+          <div className="space-y-6">
+            <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-850 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#adff2f]/5 rounded-full blur-3xl pointer-events-none -mr-32 -mt-32"></div>
+              
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 bg-[#adff2f]/10 rounded-xl">
+                  <FileText className="w-6 h-6 text-[#adff2f]" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold tracking-tight text-lg">Database Inventory Clone</h3>
+                  <p className="text-zinc-400 text-xs">Copy your store's cards as text, and paste it into a different store.</p>
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Export Section */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-white font-bold text-sm mb-1 uppercase tracking-wide">Export</h4>
+                    <p className="text-xs text-zinc-500">Generates a JSON string of all cards in this store.</p>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setExportString(JSON.stringify(cards, null, 2));
+                    }}
+                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-800 p-3 rounded-lg text-xs font-bold transition-all"
+                  >
+                    Generate Export Code
+                  </button>
+                  
+                  {exportString && (
+                    <div className="space-y-2">
+                      <textarea 
+                        readOnly 
+                        value={exportString} 
+                        className="w-full h-48 bg-black border border-zinc-800 rounded-lg p-3 text-[10px] font-mono text-[#adff2f] outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(exportString);
+                          alert('Copied to clipboard!');
+                        }}
+                        className="w-full bg-[#adff2f]/10 hover:bg-[#adff2f]/20 text-[#adff2f] border border-[#adff2f]/30 p-2 rounded-lg text-xs font-bold transition-all"
+                      >
+                        Copy to Clipboard
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Import Section */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-white font-bold text-sm mb-1 uppercase tracking-wide">Import</h4>
+                    <p className="text-xs text-zinc-500">Paste the JSON string to add cards to this store.</p>
+                  </div>
+
+                  <textarea 
+                    value={importString}
+                    onChange={(e) => setImportString(e.target.value)}
+                    placeholder="Paste your export code here..."
+                    className="w-full h-48 bg-black border border-zinc-800 focus:border-[#adff2f]/50 rounded-lg p-3 text-[10px] font-mono text-zinc-300 outline-none transition-all"
+                  />
+                  
+                  <button
+                    disabled={isImporting || !importString.trim()}
+                    onClick={async () => {
+                      setIsImporting(true);
+                      try {
+                        const parsed = JSON.parse(importString);
+                        if (!Array.isArray(parsed)) throw new Error("Format is invalid (not an array).");
+                        
+                        let count = 0;
+                        for (const card of parsed) {
+                          if (card.id && card.name) {
+                            await setDoc(doc(db, 'cards', card.id), card, { merge: true });
+                            count++;
+                          }
+                        }
+                        
+                        alert(`Successfully imported ${count} cards!`);
+                        setImportString('');
+                        // The onSnapshot listener in App.tsx will automatically refresh the UI
+                      } catch (err) {
+                        console.error("Import failed", err);
+                        alert("Invalid code format! Ensure you copied it exactly.");
+                      }
+                      setIsImporting(false);
+                    }}
+                    className="w-full bg-[#adff2f] hover:bg-[#9be529] disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-black p-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all"
+                  >
+                    {isImporting ? 'Importing...' : 'Start Import'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
