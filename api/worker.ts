@@ -58,8 +58,9 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: 'Failed to parse Service Account JSON. Please check your Vercel Environment Variable for extra spaces or missing quotes.', details: initError.message });
   }
 
-  const databaseId = process.env.FIREBASE_FIRESTORE_DATABASE_ID || process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '(default)';
-  const db = getFirestore(app, databaseId);
+  const rawDbId = process.env.FIREBASE_FIRESTORE_DATABASE_ID || process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '';
+  const databaseId = rawDbId === '(default)' ? '' : rawDbId;
+  const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 
   // 1. Authorization Check
   // Allow UptimeRobot to ping this using ?key=YOUR_CRON_SECRET
