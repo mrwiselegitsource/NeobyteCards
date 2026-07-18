@@ -604,7 +604,7 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
             <div className="flex-1 bg-white relative overflow-hidden" id="iframe-viewport-container">
               <div style={{ position: 'relative', width: '100%', maxWidth: '480px', margin: '0 auto' }}>
                 {/* STICKY OVERLAY - With centered logo */}
-                <div style={{ position: 'sticky', top: 0, zIndex: 20, height: '240px', background: 'white', borderBottom: '1px solid #e8e8e8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px', pointerEvents: 'none' }}>
+                <div style={{ position: 'sticky', top: 0, zIndex: 20, height: '310px', background: 'white', borderBottom: '1px solid #e8e8e8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px', pointerEvents: 'none' }}>
                   {/* CENTERED LOGO / PROFILE IMAGE */}
                   {siteImages?.paymentMaskLogo ? (
                     <div style={{ width: '80px', height: '80px', borderRadius: '50%', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', overflow: 'hidden', flexShrink: 0 }}>
@@ -622,11 +622,11 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
                 </div>
 
                 {/* SCROLLABLE IFRAME CONTAINER */}
-                <div style={{ height: '600px', overflowY: 'auto', marginTop: '-240px', paddingTop: '240px', background: 'white', borderRadius: '0 0 12px 12px', border: '1px solid #e0e0e0', borderTop: 'none' }}>
+                <div style={{ height: '600px', overflowY: 'auto', marginTop: '-310px', paddingTop: '310px', background: 'white', borderRadius: '0 0 12px 12px', border: '1px solid #e0e0e0', borderTop: 'none' }}>
                   <iframe
                     src={currentEversendLink}
                     title="Eversend Payment Portal Link"
-                    style={{ width: '100%', height: '1100px', border: 'none', display: 'block', marginTop: '-240px' }}
+                    style={{ width: '100%', height: '1100px', border: 'none', display: 'block', marginTop: '-310px' }}
                     scrolling="no"
                     sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
                     referrerPolicy="no-referrer"
