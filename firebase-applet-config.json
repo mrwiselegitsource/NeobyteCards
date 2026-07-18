@@ -1,1 +1,10 @@
-
+{
+  "projectId": "gen-lang-client-0568681704",
+  "appId": "1:23341994581:web:0da3855f8b0d73a5823adc",
+  "apiKey": "AIzaSyBDuYQBAHa3UovDuTgj3SjxwjCkhaK-yu0",
+  "authDomain": "gen-lang-client-0568681704.firebaseapp.com",
+  "firestoreDatabaseId": "remixed-firestore-database-id",
+  "storageBucket": "gen-lang-client-0568681704.firebasestorage.app",
+  "messagingSenderId": "23341994581",
+  "measurementId": ""
+}
