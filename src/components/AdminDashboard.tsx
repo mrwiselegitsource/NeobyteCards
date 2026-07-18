@@ -152,67 +152,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Gateways configurations state
-  const [eversendLink1, setEversendLink1] = useState(() => {
-    try {
-      const saved = localStorage.getItem('neobyte_eversend_links');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr[0]) return arr[0];
-      }
-    } catch (e) {}
-    return 'https://eversend.me/credittrusts';
-  });
-  const [eversendLink2, setEversendLink2] = useState(() => {
-    try {
-      const saved = localStorage.getItem('neobyte_eversend_links');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr[1]) return arr[1];
-      }
-    } catch (e) {}
-    return 'https://eversend.me/paynode55';
-  });
-  const [eversendLink3, setEversendLink3] = useState(() => {
-    try {
-      const saved = localStorage.getItem('neobyte_eversend_links');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr[2]) return arr[2];
-      }
-    } catch (e) {}
-    return 'https://eversend.me/securesettlement';
-  });
+  const [eversendLink1, setEversendLink1] = useState('https://eversend.me/credittrusts');
+  const [eversendLink2, setEversendLink2] = useState('https://eversend.me/paynode55');
+  const [eversendLink3, setEversendLink3] = useState('https://eversend.me/securesettlement');
 
-  const [cryptoAddr1, setCryptoAddr1] = useState(() => {
-    try {
-      const saved = localStorage.getItem('neobyte_crypto_addresses');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr[0]) return arr[0];
+  const [cryptoAddr1, setCryptoAddr1] = useState('1AvUwag3sbSBmZd16qmQxPc62zPKje4Qrq');
+  const [cryptoAddr2, setCryptoAddr2] = useState('bc1qxy2kg3ut765rw9hl80p3ca286g281q0748t432');
+  const [cryptoAddr3, setCryptoAddr3] = useState('3Ektv93tcqS8or42zP76pPde122mQxPce2');
+
+  React.useEffect(() => {
+    const fetchGateways = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'gateways');
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.eversendLinks && Array.isArray(data.eversendLinks)) {
+            if (data.eversendLinks[0]) setEversendLink1(data.eversendLinks[0]);
+            if (data.eversendLinks[1]) setEversendLink2(data.eversendLinks[1]);
+            if (data.eversendLinks[2]) setEversendLink3(data.eversendLinks[2]);
+          }
+          if (data.cryptoAddresses && Array.isArray(data.cryptoAddresses)) {
+            if (data.cryptoAddresses[0]) setCryptoAddr1(data.cryptoAddresses[0]);
+            if (data.cryptoAddresses[1]) setCryptoAddr2(data.cryptoAddresses[1]);
+            if (data.cryptoAddresses[2]) setCryptoAddr3(data.cryptoAddresses[2]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load gateways", err);
       }
-    } catch (e) {}
-    return '1AvUwag3sbSBmZd16qmQxPc62zPKje4Qrq';
-  });
-  const [cryptoAddr2, setCryptoAddr2] = useState(() => {
-    try {
-      const saved = localStorage.getItem('neobyte_crypto_addresses');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr[1]) return arr[1];
-      }
-    } catch (e) {}
-    return 'bc1qxy2kg3ut765rw9hl80p3ca286g281q0748t432';
-  });
-  const [cryptoAddr3, setCryptoAddr3] = useState(() => {
-    try {
-      const saved = localStorage.getItem('neobyte_crypto_addresses');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr[2]) return arr[2];
-      }
-    } catch (e) {}
-    return '3Ektv93tcqS8or42zP76pPde122mQxPce2';
-  });
+    };
+    fetchGateways();
+  }, []);
 
   // General Config Handlers
   const handleToggleAutoDispatch = async () => {
@@ -418,7 +389,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setAlertMessage({ type: 'success', text: 'Reusable custom message saved for future dispatches.' });
   };
 
-  const handleSaveGateways = (e: React.FormEvent) => {
+  const handleSaveGateways = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Filter out empty entries
@@ -434,11 +405,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return;
     }
     
-    
-    localStorage.setItem('neobyte_eversend_links', JSON.stringify(links));
-    localStorage.setItem('neobyte_crypto_addresses', JSON.stringify(cryptos));
-    
-    setAlertMessage({ type: 'success', text: 'Gateway pools & configurations successfully updated!' });
+    try {
+      const docRef = doc(db, 'settings', 'gateways');
+      await setDoc(docRef, { eversendLinks: links, cryptoAddresses: cryptos }, { merge: true });
+      
+      // Keep local storage as fallback for now, but not required
+      localStorage.setItem('neobyte_eversend_links', JSON.stringify(links));
+      localStorage.setItem('neobyte_crypto_addresses', JSON.stringify(cryptos));
+      
+      setAlertMessage({ type: 'success', text: 'Gateway pools & configurations successfully updated to Database!' });
+    } catch (err) {
+      console.error('Failed to save gateways to Firebase', err);
+      setAlertMessage({ type: 'error', text: 'Failed to update gateways to Database.' });
+    }
     
     setTimeout(() => {
       setAlertMessage(null);

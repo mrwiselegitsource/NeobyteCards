@@ -41,7 +41,9 @@ try {
       console.log("[Worker] Firebase Admin initialized using Service Account JSON.");
     } else {
       console.warn("[Worker] FIREBASE_SERVICE_ACCOUNT_KEY is missing. Background updates may fail due to Firestore rules.");
-      app = admin.initializeApp();
+      app = admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      });
     }
   } else {
     app = admin.apps[0]!;

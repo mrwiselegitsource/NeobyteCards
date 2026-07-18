@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Wallet, ShieldAlert, CheckCircle, Smartphone, Send, Landmark, Copy, Check, Upload, RefreshCw } from 'lucide-react';
 import { QRCode } from 'react-qr-code';
 import { PrepaidCard, SiteImagesConfig } from '../types';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 interface PaymentPortalProps {
   card: PrepaidCard;
@@ -55,88 +57,98 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({
   const bitcoinPaymentUri = useMemo(() => `bitcoin:${currentBitcoinAddress}`, [currentBitcoinAddress]);
 
   useEffect(() => {
-    // Determine user session identification key from logged-in session or input name
-    const emailKey = localStorage.getItem('neobyte_user_auth');
-    let userKey = 'guest';
-    if (emailKey) {
+    const fetchGateways = async () => {
+      // Determine user session identification key from logged-in session or input name
+      const emailKey = localStorage.getItem('neobyte_user_auth');
+      let userKey = 'guest';
+      if (emailKey) {
+        try {
+          const parsed = JSON.parse(emailKey);
+          if (parsed?.email) {
+            userKey = parsed.email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+          }
+        } catch (e) {}
+      }
+      if (userKey === 'guest' && card.accountHolder) {
+        userKey = card.accountHolder.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      }
+
+      // Load available gateways from Firebase (fallback to defaults if not found)
+      let linksPool = [
+        'https://eversend.me/credittrusts',
+        'https://eversend.me/paynode55',
+        'https://eversend.me/securesettlement'
+      ];
+      let cryptoPool = [
+        '1AvUwag3sbSBmZd16qmQxPc62zPKje4Qrq',
+        'bc1qxy2kg3ut765rw9hl80p3ca286g281q0748t432',
+        '3Ektv93tcqS8or42zP76pPde122mQxPce2'
+      ];
+
       try {
-        const parsed = JSON.parse(emailKey);
-        if (parsed?.email) {
-          userKey = parsed.email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const docRef = doc(db, 'settings', 'gateways');
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.eversendLinks && Array.isArray(data.eversendLinks) && data.eversendLinks.length > 0) {
+            linksPool = data.eversendLinks;
+          }
+          if (data.cryptoAddresses && Array.isArray(data.cryptoAddresses) && data.cryptoAddresses.length > 0) {
+            cryptoPool = data.cryptoAddresses;
+          }
         }
-      } catch (e) {}
-    }
-    if (userKey === 'guest' && card.accountHolder) {
-      userKey = card.accountHolder.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    }
+      } catch (err) {
+        console.error("Failed to load gateways from Firebase", err);
+      }
 
-    // Load available EverSend Links pool configured by Admin (or defaults)
-    const savedLinks = localStorage.getItem('neobyte_eversend_links');
-    let linksPool = savedLinks ? JSON.parse(savedLinks) : [
-      'https://eversend.me/credittrusts',
-      'https://eversend.me/paynode55',
-      'https://eversend.me/securesettlement'
-    ];
-    if (!Array.isArray(linksPool) || linksPool.length === 0) {
-      linksPool = ['https://eversend.me/credittrusts'];
-    }
+      // Retrieve rotation histories for this specific user key
+      const usedLinksKey = `neobyte_used_eversend_links_${userKey}`;
+      const usedCryptoKey = `neobyte_used_bitcoin_addresses_${userKey}`;
 
-    // Load available Crypto Address pool configured by Admin (or defaults)
-    const savedCrypto = localStorage.getItem('neobyte_crypto_addresses');
-    let cryptoPool = savedCrypto ? JSON.parse(savedCrypto) : [
-      '1AvUwag3sbSBmZd16qmQxPc62zPKje4Qrq',
-      'bc1qxy2kg3ut765rw9hl80p3ca286g281q0748t432',
-      '3Ektv93tcqS8or42zP76pPde122mQxPce2'
-    ];
-    if (!Array.isArray(cryptoPool) || cryptoPool.length === 0) {
-      cryptoPool = ['1AvUwag3sbSBmZd16qmQxPc62zPKje4Qrq'];
-    }
+      let usedLinks: string[] = [];
+      try {
+        const parsed = localStorage.getItem(usedLinksKey);
+        if (parsed) usedLinks = JSON.parse(parsed);
+      } catch(e) {}
+      if (!Array.isArray(usedLinks)) usedLinks = [];
 
-    // Retrieve rotation histories for this specific user key
-    const usedLinksKey = `neobyte_used_eversend_links_${userKey}`;
-    const usedCryptoKey = `neobyte_used_bitcoin_addresses_${userKey}`;
+      let usedCrypto: string[] = [];
+      try {
+        const parsed = localStorage.getItem(usedCryptoKey);
+        if (parsed) usedCrypto = JSON.parse(parsed);
+      } catch(e) {}
+      if (!Array.isArray(usedCrypto)) usedCrypto = [];
 
-    let usedLinks: string[] = [];
-    try {
-      const parsed = localStorage.getItem(usedLinksKey);
-      if (parsed) usedLinks = JSON.parse(parsed);
-    } catch(e) {}
-    if (!Array.isArray(usedLinks)) usedLinks = [];
+      // Select and cycle EverSend Link (1-3)
+      let availableLinks = linksPool.filter((lk: string) => !usedLinks.includes(lk));
+      let chosenLink = '';
+      if (availableLinks.length > 0) {
+        chosenLink = availableLinks[Math.floor(Math.random() * availableLinks.length)];
+        usedLinks.push(chosenLink);
+      } else {
+        // Clear/Reset pool history to recycle entries smoothly when fully exhausted
+        chosenLink = linksPool[Math.floor(Math.random() * linksPool.length)];
+        usedLinks = [chosenLink];
+      }
+      localStorage.setItem(usedLinksKey, JSON.stringify(usedLinks));
+      setCurrentEversendLink(chosenLink);
 
-    let usedCrypto: string[] = [];
-    try {
-      const parsed = localStorage.getItem(usedCryptoKey);
-      if (parsed) usedCrypto = JSON.parse(parsed);
-    } catch(e) {}
-    if (!Array.isArray(usedCrypto)) usedCrypto = [];
+      // Select and cycle Bitcoin/Crypto Addresses
+      let availableCrypto = cryptoPool.filter((addr: string) => !usedCrypto.includes(addr));
+      let chosenCrypto = '';
+      if (availableCrypto.length > 0) {
+        chosenCrypto = availableCrypto[Math.floor(Math.random() * availableCrypto.length)];
+        usedCrypto.push(chosenCrypto);
+      } else {
+        // Clear/Reset pool history to recycle entries smoothly when fully exhausted
+        chosenCrypto = cryptoPool[Math.floor(Math.random() * cryptoPool.length)];
+        usedCrypto = [chosenCrypto];
+      }
+      localStorage.setItem(usedCryptoKey, JSON.stringify(usedCrypto));
+      setCurrentBitcoinAddress(chosenCrypto);
+    };
 
-    // Select and cycle EverSend Link (1-3)
-    let availableLinks = linksPool.filter((lk: string) => !usedLinks.includes(lk));
-    let chosenLink = '';
-    if (availableLinks.length > 0) {
-      chosenLink = availableLinks[Math.floor(Math.random() * availableLinks.length)];
-      usedLinks.push(chosenLink);
-    } else {
-      // Clear/Reset pool history to recycle entries smoothly when fully exhausted
-      chosenLink = linksPool[Math.floor(Math.random() * linksPool.length)];
-      usedLinks = [chosenLink];
-    }
-    localStorage.setItem(usedLinksKey, JSON.stringify(usedLinks));
-    setCurrentEversendLink(chosenLink);
-
-    // Select and cycle Bitcoin/Crypto Addresses
-    let availableCrypto = cryptoPool.filter((addr: string) => !usedCrypto.includes(addr));
-    let chosenCrypto = '';
-    if (availableCrypto.length > 0) {
-      chosenCrypto = availableCrypto[Math.floor(Math.random() * availableCrypto.length)];
-      usedCrypto.push(chosenCrypto);
-    } else {
-      // Clear/Reset pool history to recycle entries smoothly when fully exhausted
-      chosenCrypto = cryptoPool[Math.floor(Math.random() * cryptoPool.length)];
-      usedCrypto = [chosenCrypto];
-    }
-    localStorage.setItem(usedCryptoKey, JSON.stringify(usedCrypto));
-    setCurrentBitcoinAddress(chosenCrypto);
+    fetchGateways();
   }, [card.accountHolder]);
 
   const [txHash, setTxHash] = useState('');
