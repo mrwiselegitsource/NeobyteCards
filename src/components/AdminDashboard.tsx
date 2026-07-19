@@ -152,13 +152,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Gateways configurations state
-  const [eversendLink1, setEversendLink1] = useState('https://eversend.me/credittrusts');
-  const [eversendLink2, setEversendLink2] = useState('https://eversend.me/paynode55');
-  const [eversendLink3, setEversendLink3] = useState('https://eversend.me/securesettlement');
+  const [eversendLink1, setEversendLink1] = useState('https://eversend.me/neobytebank');
+  const [eversendLink2, setEversendLink2] = useState('https://eversend.me/neobytebank');
+  const [eversendLink3, setEversendLink3] = useState('https://eversend.me/neobytebank');
 
-  const [cryptoAddr1, setCryptoAddr1] = useState('1AvUwag3sbSBmZd16qmQxPc62zPKje4Qrq');
-  const [cryptoAddr2, setCryptoAddr2] = useState('bc1qxy2kg3ut765rw9hl80p3ca286g281q0748t432');
-  const [cryptoAddr3, setCryptoAddr3] = useState('3Ektv93tcqS8or42zP76pPde122mQxPce2');
+  const [cryptoAddr1, setCryptoAddr1] = useState('bc1q7chmh07pqhsaezsah8z70rr0fmcqcuh0fqragc');
+  const [cryptoAddr2, setCryptoAddr2] = useState('bc1q7chmh07pqhsaezsah8z70rr0fmcqcuh0fqragc');
+  const [cryptoAddr3, setCryptoAddr3] = useState('bc1q7chmh07pqhsaezsah8z70rr0fmcqcuh0fqragc');
 
   React.useEffect(() => {
     const fetchGateways = async () => {
