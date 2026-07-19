@@ -170,6 +170,7 @@ service cloud.firestore {
           (settingsId == 'support' && isValidSupportContacts(incoming()))
           || (settingsId == 'siteImages' && isValidSiteImages(incoming()))
           || (settingsId == 'general' && isValidGeneralSettings(incoming()))
+          || (settingsId == 'gateways' && incoming().eversendLinks is list && incoming().cryptoAddresses is list)
         );
       allow delete: if isAuthAdmin() || isWebAdmin();
     }
